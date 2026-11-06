@@ -167,7 +167,7 @@ input[type=date]{-webkit-appearance:none;appearance:none;min-height:44px}
 <script>
 (function(){
 'use strict';
-var ESM_BUILD = 'ESM e3';
+var ESM_BUILD = 'ESM e4';
 var MODE = 'shop';   // Block 1 = 'shop' (index.html: shoppers + tenants) · Block 2 = 'office' (office.html). Set by build_esm.py.
 var SB_URL = 'https://pqduivcxwykcixqsfrwi.supabase.co';
 var SB_KEY = 'sb_publishable_Cl8uDRrLqx9VMaC3lifpWA_Wl91vVy2';   // OTR-Tennis public (publishable) key
@@ -609,11 +609,13 @@ function toNum(v){ v = String(v == null ? '' : v).replace(/\s/g, '').replace(','
 // rent now (after the yearly increases), the next increase, and the lease's state
 function leaseCalc(l, u, today){
   var pct = +l.increase_pct || 0;
-  var base = l.rent_basis === 'm2' ? (+l.rent_value) * (+u.area_m2 || 0) : +l.rent_value;
-  var yrs = l.start_on > today ? 0 : fullYears(l.start_on, today);
-  var rent = Math.round(base * Math.pow(1 + pct / 100, yrs) * 100) / 100;
+  var base = l.rent_basis === 'spaces' ? spacesRent(u) : l.rent_basis === 'm2' ? (+l.rent_value) * (+u.area_m2 || 0) : +l.rent_value;
+  var yrs = l.start_on > today ? 0 : fullYears(l.start_on, today), esc_ = Math.pow(1 + pct / 100, yrs);
+  var rent = l.rent_basis === 'spaces'   // each space's rate is rounded to the cent after the increases, so invoice lines multiply out exactly
+    ? Math.round((u.spaces || []).reduce(function(a, sp){ return a + (+sp.area_m2 || 0) * Math.round(spaceRate(sp) * esc_ * 100) / 100; }, 0) * 100) / 100
+    : Math.round(base * esc_ * 100) / 100;
   var next = pct > 0 ? addYears(l.start_on, yrs + 1) : null;
-  var c = { rent: rent, next: next, nextRent: Math.round(rent * (1 + pct / 100) * 100) / 100,
+  var c = { rent: rent, esc: esc_, next: next, nextRent: Math.round(rent * (1 + pct / 100) * 100) / 100,
             toNext: next ? daysTo(today, next) : null, toEnd: l.end_on ? daysTo(today, l.end_on) : null };
   c.state = l.start_on > today ? 'starts' : (l.end_on && l.end_on < today) ? 'past' : (c.toEnd != null && c.toEnd <= 90) ? 'ending' : 'running';
   return c;
@@ -623,6 +625,33 @@ function leasePill(c, l){
   if (c.state === 'ending') return '<span class="st pending">Ends in ' + c.toEnd + ' days</span>';
   if (c.state === 'starts') return '<span class="st ended">Starts ' + niceY(l.start_on) + '</span>';
   return '<span class="st approved">Running</span>';
+}
+
+// e4 · spaces (SAPOA): each unit's spaces, its rentable m², rent from the spaces
+function mgmtLoad(s){
+  return rpc('ctr_mgmt_home', { p_centre: CID, p_code: s.code }).then(function(D){
+    if (!D || !D.ok) return D;
+    D.space_types = D.space_types || []; D.unit_spaces = D.unit_spaces || [];
+    var byId = {}; D.space_types.forEach(function(t){ byId[t.id] = t; });
+    D.units.forEach(function(u){ u.spaces = D.unit_spaces.filter(function(x){ return x.unit_id === u.id; })
+      .map(function(x){ return { id: x.id, type_id: x.type_id, type: byId[x.type_id], area_m2: +x.area_m2, rate: x.rate == null ? null : +x.rate }; }); });
+    return D;
+  });
+}
+function spaceRate(sp){ return sp.rate != null && sp.rate !== '' && !isNaN(sp.rate) ? +sp.rate : (sp.type ? +sp.type.rate : 0); }
+function spacesRent(u){ return (u.spaces || []).reduce(function(a, sp){ return a + (+sp.area_m2 || 0) * spaceRate(sp); }, 0); }
+function rentableOf(spaces){ return Math.round(spaces.reduce(function(a, sp){ return a + (sp.type && sp.type.rentable ? (+sp.area_m2 || 0) : 0); }, 0) * 100) / 100; }
+function spaceRow(D, sp){
+  return '<div class="sprow" style="border-top:1px solid var(--line);padding:8px 0">' +
+    '<div style="display:flex;gap:8px;align-items:center"><select data-sp="type" style="flex:1">' + D.space_types.map(function(t){
+      return '<option value="' + t.id + '"' + (t.id === sp.type_id ? ' selected' : '') + '>' + esc(t.name) + (t.rentable ? ' (R)' : '') + '</option>'; }).join('') + '</select>' +
+    '<span class="b sm no" data-spdel>✕</span></div>' +
+    '<div class="two"><div><label>m²</label><input data-sp="area" inputmode="decimal" value="' + esc(numStr(sp.area_m2)) + '"></div>' +
+    '<div><label>Rate per m²</label><input data-sp="rate" inputmode="decimal" placeholder="usual ' +
+      esc(String((D.space_types.filter(function(t){ return t.id === sp.type_id; })[0] || D.space_types[0] || { rate: 0 }).rate)) + '" value="' + esc(numStr(sp.rate)) + '"></div></div></div>';
+}
+function spacesText(u){
+  return (u.spaces || []).map(function(sp){ return (sp.type ? sp.type.name : '?') + ' ' + m2s(sp.area_m2); }).join(' + ');
 }
 
 function mgmtTotals(D){
@@ -654,7 +683,7 @@ function chargeEst(D, u, ct, row, T){
 
 function ownerLeases(box, s, top){
   box.innerHTML = '<div class="loading">Loading…</div>';
-  rpc('ctr_mgmt_home', { p_centre: CID, p_code: s.code }).then(function(D){
+  mgmtLoad(s).then(function(D){
     if (!D.ok) { box.innerHTML = '<div class="msg err">' + esc(D.msg) + '</div>'; return; }
     var cur = D.centre.currency, today = D.today, T = mgmtTotals(D);
     var roll = 0, ending = 0, past = 0, incr = 0, empty = 0, att = [];
@@ -683,7 +712,8 @@ function ownerLeases(box, s, top){
         var l = T.leaseOf[u.id], c = l && !u.vacant ? leaseCalc(l, u, today) : null;
         return '<div class="item rr" data-u="' + u.id + '"><div class="top" data-open="' + u.id + '"><div>' +
           '<div class="ti">' + esc(u.name) + '</div>' +
-          '<div class="mt">' + (c ? esc(l.tenant_name) : 'Empty') + ' · ' + m2s(u.area_m2) + (u.location ? ' · ' + esc(u.location) : '') + '</div>' +
+          '<div class="mt">' + (c ? esc(l.tenant_name) : 'Empty') + ' · ' + m2s(u.area_m2) + ' rentable' + (u.location ? ' · ' + esc(u.location) : '') + '</div>' +
+          (u.spaces.length > 1 ? '<div class="mt">' + esc(spacesText(u)) + '</div>' : '') +
           (c ? '<div class="mt">' + niceY(l.start_on) + ' to ' + (l.end_on ? niceY(l.end_on) : 'no end date') + '</div>' : '') +
           '</div><div style="text-align:right">' + (c ? '<div class="amt">' + money(cur, c.rent) + '</div>' + leasePill(c, l) : '<span class="st empty">Empty</span>') +
           '</div></div>' + (MGMT_OPEN === u.id ? unitCard(D, u, l, T) : '') + '</div>';
@@ -704,7 +734,7 @@ function ownerLeases(box, s, top){
           '<div class="hint">It is not on the door until a lease is added.</div>' +
           '<label>Unit name</label><input id="nuName" maxlength="60" placeholder="e.g. Shop 10">' +
           '<div class="two"><div><label>Where</label><input id="nuLoc" maxlength="40" placeholder="e.g. First floor"></div>' +
-          '<div><label>Size (m²)</label><input id="nuArea" inputmode="decimal"></div></div>' +
+          '<div><label>Shop floor (m²)</label><input id="nuArea" inputmode="decimal"></div></div>' +
           '<div class="btns"><div class="b sm main" id="nuSave">Add</div><div class="b sm" id="nuCancel">Cancel</div></div><div class="msg" id="nuMsg"></div></div>';
         $('nuCancel').onclick = function(ev){ ev.stopPropagation(); $('addUnitSlot').innerHTML = ''; };
         $('nuSave').onclick = function(ev){ ev.stopPropagation();
@@ -727,8 +757,10 @@ function unitCard(D, u, l, T){
   return '<div class="box" style="margin-top:10px;cursor:default" data-card>' +
     '<div class="sub" style="margin-top:0">The space</div>' +
     (vac ? '<label>Unit name</label><input data-s="name" maxlength="60" value="' + esc(u.name) + '">' : '') +
-    '<div class="two"><div><label>Where</label><input data-s="location" maxlength="40" value="' + esc(u.location) + '"></div>' +
-    '<div><label>Size (m²)</label><input data-s="area" inputmode="decimal" value="' + esc(numStr(u.area_m2)) + '"></div></div>' +
+    '<label>Where</label><input data-s="location" maxlength="40" value="' + esc(u.location) + '">' +
+    '<div class="sub">Spaces</div><div class="hint">Each kind of space with its m² and rent per m². Rentable m² (SAPOA) counts the spaces marked R.</div>' +
+    '<div data-spaces>' + (u.spaces.length ? u.spaces : (u.area_m2 ? [{ type_id: (D.space_types[0] || {}).id, area_m2: u.area_m2, rate: null }] : [])).map(function(sp){ return spaceRow(D, sp); }).join('') + '</div>' +
+    '<div class="btns"><div class="b sm" data-addsp>Add a space</div></div><div class="hint" data-rm2></div>' +
     '<div class="sub">' + (vac ? 'New lease' : 'The lease') + '</div>' +
     (vac ? '<div class="hint">Saving a lease puts the shop on the door and gives it a shop code.</div>' +
            '<label>Shop name on the door</label><input data-l="shop_name" maxlength="60" placeholder="e.g. Book Nook">' +
@@ -740,9 +772,11 @@ function unitCard(D, u, l, T){
     '<div><label>Tenant\'s VAT no.</label><input data-l="vat_no" maxlength="30" value="' + f('vat_no') + '"></div></div>' +
     '<div class="two"><div><label>Start</label><input data-l="start_on" type="date" value="' + f('start_on') + '"></div>' +
     '<div><label>End</label><input data-l="end_on" type="date" value="' + f('end_on') + '"></div></div>' +
-    '<div class="two"><div><label>Rent is</label><select data-l="rent_basis"><option value="month"' + (L.rent_basis !== 'm2' ? ' selected' : '') + '>a month</option>' +
-      '<option value="m2"' + (L.rent_basis === 'm2' ? ' selected' : '') + '>per m²</option></select></div>' +
-    '<div><label>Rent at the start (' + cur + ', excl. VAT)</label><input data-l="rent_value" inputmode="decimal" value="' + esc(numStr(L.rent_value)) + '"></div></div>' +
+    '<label>Rent is worked out</label><select data-l="rent_basis">' +
+      '<option value="spaces"' + (L.rent_basis === 'spaces' || (!l && D.space_types.length) ? ' selected' : '') + '>From the spaces (each space × its rate)</option>' +
+      '<option value="month"' + (L.rent_basis === 'month' ? ' selected' : '') + '>One amount a month</option>' +
+      '<option value="m2"' + (L.rent_basis === 'm2' ? ' selected' : '') + '>One rate per rentable m²</option></select>' +
+    '<div data-rvwrap><label>Rent at the start (' + cur + ', excl. VAT)</label><input data-l="rent_value" inputmode="decimal" value="' + esc(numStr(L.rent_value)) + '"></div>' +
     '<div class="two"><div><label>Yearly increase (%)</label><input data-l="increase_pct" inputmode="decimal" value="' + esc(numStr(L.increase_pct)) + '"></div>' +
     '<div><label>Deposit (' + cur + ')</label><input data-l="deposit" inputmode="decimal" value="' + esc(numStr(L.deposit)) + '"></div></div>' +
     '<label>Deposit held as</label><select data-l="deposit_kind">' + ['Cash','Bank guarantee','None'].map(function(k){
@@ -752,12 +786,12 @@ function unitCard(D, u, l, T){
     '<div class="btns"><div class="b sm main" data-save>Save</div><div class="b sm" data-close>Close</div>' +
       (!vac ? '<div class="b sm no" data-leave>Tenant leaves</div>' : '') + '</div>' +
     '<div class="slot"></div><div class="msg" data-m></div>' +
-    '<div class="sub">Charges for this shop</div><div class="hint">Each charge uses the centre\'s way unless you change it here.</div>' +
+    '<div class="sub">Charges for this shop</div><div class="hint">Each charge is the same as the centre unless you change it here.</div>' +
     D.charges.map(function(ct){
       var r = chargeRow(D, u, ct), m = r.method || '';
       return '<div class="crow" data-ch="' + ct.id + '"><div class="hd"><span class="nm">' + esc(ct.name) + '</span>' +
         '<label class="chk"><input type="checkbox" data-c="enabled"' + (r.enabled ? ' checked' : '') + '> Charged</label></div>' +
-        '<select data-c="method"><option value="">Centre\'s way: ' + esc(METHODS[ct.method]) + '</option>' +
+        '<select data-c="method"><option value="">Same as the centre (' + esc(METHODS[ct.method]) + ')</option>' +
           Object.keys(METHODS).map(function(k){ return '<option value="' + k + '"' + (m === k ? ' selected' : '') + '>' + esc(METHODS[k]) + '</option>'; }).join('') + '</select>' +
         '<input type="text" data-c="amount" inputmode="decimal" placeholder="This shop\'s amount (' + cur + ' a month)" value="' + esc(numStr(r.amount)) + '">' +
         '<label class="chk" data-meterbox style="margin-top:8px"><input type="checkbox" data-c="has_meter"' + (r.has_meter ? ' checked' : '') + '> Has its own meter</label>' +
@@ -773,15 +807,37 @@ function wireUnitCard(D, wrap, s, T){
   var l = T.leaseOf[u.id], cur = D.centre.currency;
   card.onclick = function(e){ e.stopPropagation(); };
   function val(sel){ var el = card.querySelector(sel); return el ? el.value : ''; }
+  // the spaces as typed on the card
+  function readSpaces(){
+    return Array.prototype.map.call(card.querySelectorAll('.sprow'), function(r){
+      var t = D.space_types.filter(function(x){ return x.id === Number(r.querySelector('[data-sp=type]').value); })[0];
+      return { type_id: t ? t.id : null, type: t, area_m2: toNum(r.querySelector('[data-sp=area]').value), rate: toNum(r.querySelector('[data-sp=rate]').value) };
+    });
+  }
+  function cardUnit(){ var sp = readSpaces(); return { id: u.id, spaces: sp, area_m2: rentableOf(sp) }; }
   function showCalc(){
-    var area = toNum(val('[data-s=area]')), L = { rent_basis: val('[data-l=rent_basis]'), rent_value: toNum(val('[data-l=rent_value]')),
+    var cu = cardUnit(), L = { rent_basis: val('[data-l=rent_basis]'), rent_value: toNum(val('[data-l=rent_value]')),
       increase_pct: toNum(val('[data-l=increase_pct]')) || 0, start_on: val('[data-l=start_on]'), end_on: val('[data-l=end_on]') };
+    card.querySelector('[data-rvwrap]').style.display = L.rent_basis === 'spaces' ? 'none' : '';
+    var all = cu.spaces.reduce(function(a, x){ return a + (+x.area_m2 || 0); }, 0);
+    card.querySelector('[data-rm2]').textContent = 'Rentable: ' + m2s(cu.area_m2) + (all > cu.area_m2 ? ' · plus ' + m2s(Math.round((all - cu.area_m2) * 100) / 100) + ' not rentable (let at its own rate)' : '');
     var el = card.querySelector('[data-calc]');
-    if (!L.start_on || L.rent_value == null || isNaN(L.rent_value)) { el.textContent = ''; return; }
-    var c = leaseCalc(L, { area_m2: area }, D.today);
+    if (!L.start_on || (L.rent_basis !== 'spaces' && (L.rent_value == null || isNaN(L.rent_value)))) { el.textContent = ''; return; }
+    var c = leaseCalc(L, cu, D.today);
     el.textContent = 'Rent now: ' + money(cur, c.rent) + ' a month excl. VAT' + (c.next ? ' · next increase ' + niceY(c.next) + ' to ' + money(cur, c.nextRent) : '');
   }
+  function wireSpaces(){
+    card.querySelectorAll('.sprow').forEach(function(r){
+      r.querySelectorAll('[data-sp]').forEach(function(el){ el.oninput = function(){ showCalc(); card.querySelectorAll('.crow').forEach(paintRow); }; el.onchange = el.oninput; });
+      r.querySelector('[data-spdel]').onclick = function(){ r.remove(); showCalc(); card.querySelectorAll('.crow').forEach(paintRow); };
+    });
+  }
+  card.querySelector('[data-addsp]').onclick = function(){
+    card.querySelector('[data-spaces]').insertAdjacentHTML('beforeend', spaceRow(D, { type_id: (D.space_types[0] || {}).id, area_m2: null, rate: null }));
+    wireSpaces(); showCalc();
+  };
   card.querySelectorAll('[data-l],[data-s]').forEach(function(el){ el.oninput = showCalc; el.onchange = showCalc; });
+  wireSpaces();
   showCalc();
   // charges: show the right boxes and the estimate as things change
   function paintRow(row){
@@ -794,8 +850,7 @@ function wireUnitCard(D, wrap, s, T){
     row.querySelector('[data-c=amount]').style.display = r.enabled && m === 'fixed' ? '' : 'none';
     row.querySelector('[data-meterbox]').style.display = r.enabled && m === 'metered' ? '' : 'none';
     row.querySelector('[data-c=meter_no]').style.display = r.enabled && m === 'metered' && r.has_meter ? '' : 'none';
-    var uu = { id: u.id, area_m2: toNum(val('[data-s=area]')) };
-    row.querySelector('.est').innerHTML = chargeEst(D, uu, ct, r, T);
+    row.querySelector('.est').innerHTML = chargeEst(D, cardUnit(), ct, r, T);
     return { ct: ct, r: r };
   }
   card.querySelectorAll('.crow').forEach(function(row){
@@ -805,10 +860,18 @@ function wireUnitCard(D, wrap, s, T){
   card.querySelector('[data-close]').onclick = function(){ MGMT_OPEN = null; pageOwner(); };
   card.querySelector('[data-save]').onclick = function(){
     var m = card.querySelector('[data-m]'); m.className = 'msg'; m.textContent = 'Saving…';
-    var area = toNum(val('[data-s=area]'));
-    if (area != null && isNaN(area)) { m.className = 'msg err'; m.textContent = 'The size must be a number.'; return; }
+    var sp = readSpaces();
+    for (var i = 0; i < sp.length; i++) {
+      if (sp[i].area_m2 == null || isNaN(sp[i].area_m2) || sp[i].area_m2 <= 0) { m.className = 'msg err'; m.textContent = 'Each space needs its size in m².'; return; }
+      if (sp[i].rate != null && isNaN(sp[i].rate)) { m.className = 'msg err'; m.textContent = 'A rate must be a number.'; return; }
+    }
     var L = {}; card.querySelectorAll('[data-l]').forEach(function(el){ L[el.getAttribute('data-l')] = el.value; });
-    rpc('ctr_space_save', { p_centre: CID, p_code: s.code, p_unit: u.id, p_name: val('[data-s=name]'), p_location: val('[data-s=location]'), p_area: area }).then(function(x){
+    rpc('ctr_unit_spaces_save', { p_centre: CID, p_code: s.code, p_unit: u.id,
+        p_spaces: sp.map(function(x){ return { type_id: x.type_id, area_m2: x.area_m2, rate: x.rate }; }) }).then(function(z){
+      if (!z.ok) { m.className = 'msg err'; m.textContent = z.msg; return null; }
+      return rpc('ctr_space_save', { p_centre: CID, p_code: s.code, p_unit: u.id, p_name: val('[data-s=name]'), p_location: val('[data-s=location]'), p_area: rentableOf(sp) || null });
+    }).then(function(x){
+      if (!x) return;
       if (!x.ok) { m.className = 'msg err'; m.textContent = x.msg; return; }
       if ((u.vacant || !l) && !L.tenant_name.trim()) { pageOwner('Unit saved.'); return; }
       rpc('ctr_lease_save', { p_centre: CID, p_code: s.code, p_unit: u.id, p_lease: L }).then(function(y){
@@ -857,14 +920,15 @@ function wireUnitCard(D, wrap, s, T){
 function rentRollCsv(D, T){
   var cur = D.centre.currency, today = D.today;
   var q = function(v){ v = v == null ? '' : String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
-  var rows = [['Unit','Where','m2','Tenant','Contact','Phone','Start','End','Rent basis','Rent at start','Rent now (' + cur + ' excl VAT)',
+  var rows = [['Unit','Where','Rentable m2','Spaces','Tenant','Contact','Phone','Start','End','Rent basis','Rent at start','Rent now (' + cur + ' excl VAT)',
                'Yearly increase %','Next increase','Rent after next increase','Deposit','Deposit held as','State']];
   D.units.forEach(function(u){
     var l = T.leaseOf[u.id];
-    if (u.vacant || !l) { rows.push([u.name, u.location, u.area_m2, '', '', '', '', '', '', '', '', '', '', '', '', '', 'Empty']); return; }
+    if (u.vacant || !l) { rows.push([u.name, u.location, u.area_m2, spacesText(u), '','', '', '', '', '', '', '', '', '', '', '', '', 'Empty']); return; }
     var c = leaseCalc(l, u, today);
-    rows.push([u.name, u.location, u.area_m2, l.tenant_name, l.contact, l.phone, l.start_on, l.end_on, l.rent_basis === 'm2' ? 'per m2' : 'per month',
-               (+l.rent_value).toFixed(2), c.rent.toFixed(2), +l.increase_pct, c.next || '', c.next ? c.nextRent.toFixed(2) : '', (+l.deposit).toFixed(2), l.deposit_kind,
+    rows.push([u.name, u.location, u.area_m2, spacesText(u), l.tenant_name, l.contact, l.phone, l.start_on, l.end_on,
+               l.rent_basis === 'spaces' ? 'from the spaces' : l.rent_basis === 'm2' ? 'per m2' : 'per month',
+               (l.rent_basis === 'spaces' ? spacesRent(u) : +l.rent_value).toFixed(2), c.rent.toFixed(2), +l.increase_pct, c.next || '', c.next ? c.nextRent.toFixed(2) : '', (+l.deposit).toFixed(2), l.deposit_kind,
                { past: 'Past its end', ending: 'Ends in ' + c.toEnd + ' days', starts: 'Not started', running: 'Running' }[c.state]]);
   });
   var csv = '﻿' + rows.map(function(r){ return r.map(q).join(','); }).join('\r\n');
@@ -876,7 +940,7 @@ function rentRollCsv(D, T){
 
 function ownerCharges(box, s, top){
   box.innerHTML = '<div class="loading">Loading…</div>';
-  rpc('ctr_mgmt_home', { p_centre: CID, p_code: s.code }).then(function(D){
+  mgmtLoad(s).then(function(D){
     if (!D.ok) { box.innerHTML = '<div class="msg err">' + esc(D.msg) + '</div>'; return; }
     var c = D.centre, cur = c.currency, T = mgmtTotals(D);
     function rateText(ct){
@@ -896,6 +960,15 @@ function ownerCharges(box, s, top){
           '<option value="let"' + (c.share_basis === 'let' ? ' selected' : '') + '>Let m² only (the tenants carry the empty units)</option></select>' +
         '<div class="hint">Whole centre: ' + m2s(T.all) + ' · let: ' + m2s(T.let_) + '. VAT is 15%.</div>' +
         '<div class="b main wide" id="stSave">Save settings</div><div class="msg" id="stMsg"></div></div>' +
+      '<div class="h3">Kinds of space</div><div class="hint">Each kind of space has its usual rent per m². <b>R</b> = counts as rentable area (SAPOA: the shop itself and common area only that shop uses, e.g. its own loading area). Rentable m² is what every share and per-m² charge uses. Yards and storage are usually let at their own rate and do not count.</div>' +
+      D.space_types.map(function(t){
+        var n = D.unit_spaces.filter(function(x){ return x.type_id === t.id; }).length;
+        return '<div class="item" data-sty="' + t.id + '"><div style="display:flex;justify-content:space-between;gap:8px"><div class="ti">' + esc(t.name) + '</div>' +
+          (t.rentable ? '<span class="st approved">R · rentable</span>' : '<span class="st ended">Own rate only</span>') + '</div>' +
+          '<div class="mt">' + money(cur, +t.rate) + ' per m² a month · ' + n + (n === 1 ? ' shop uses it' : ' shops use it') + '</div>' +
+          '<div class="btns"><div class="b sm" data-sted="' + t.id + '">Change</div><div class="b sm no" data-stdel="' + t.id + '">Remove</div></div><div class="slot"></div></div>';
+      }).join('') +
+      '<div class="b wide" id="styAdd">Add a kind of space</div><div id="styAddSlot"></div>' +
       '<div class="h3">The centre\'s charges</div><div class="hint">These are the choices on every shop\'s charges. Rent is on each lease.</div>' +
       D.charges.map(function(ct){
         return '<div class="item" data-ct="' + ct.id + '"><div class="top" style="display:flex;justify-content:space-between;gap:8px">' +
@@ -905,6 +978,40 @@ function ownerCharges(box, s, top){
       }).join('') +
       '<div class="b main wide" id="ctAdd">Add a charge</div><div id="ctAddSlot"></div>' +
       '<div class="b wide" id="out">Log out</div>';
+    // kinds of space: add / change / remove
+    function styForm(t){
+      t = t || { name: '', rate: 0, rentable: true, sort: 10 + D.space_types.length * 10 };
+      return '<div class="box" style="margin-top:10px" data-styform="' + (t.id || '') + '">' +
+        '<label>Name</label><input data-y="name" maxlength="40" value="' + esc(t.name) + '" placeholder="e.g. Delivery bay">' +
+        '<div class="two"><div><label>Usual rent per m² (' + cur + ')</label><input data-y="rate" inputmode="decimal" value="' + esc(numStr(t.rate)) + '"></div>' +
+        '<div><label>Place in the list</label><input data-y="sort" inputmode="numeric" value="' + esc(t.sort) + '"></div></div>' +
+        '<label class="chk" style="margin-top:12px"><input type="checkbox" data-y="rentable"' + (t.rentable ? ' checked' : '') + '> Counts as rentable area (R)</label>' +
+        '<div class="btns"><div class="b sm main" data-ysave>Save</div><div class="b sm" data-ycancel>Cancel</div></div><div class="msg" data-ym></div></div>';
+    }
+    function styWire(holder){
+      var f = holder.querySelector('[data-styform]'), g = function(k){ return f.querySelector('[data-y=' + k + ']'); };
+      f.querySelector('[data-ycancel]').onclick = function(){ holder.innerHTML = ''; };
+      f.querySelector('[data-ysave]').onclick = function(){
+        var m = f.querySelector('[data-ym]'), rate = toNum(g('rate').value) || 0, id = f.getAttribute('data-styform');
+        if (isNaN(rate)) { m.className = 'msg err'; m.textContent = 'The rate must be a number.'; return; }
+        rpc('ctr_space_type_save', { p_centre: CID, p_code: s.code, p_id: id ? Number(id) : null, p_name: g('name').value, p_rate: rate,
+            p_rentable: g('rentable').checked, p_sort: parseInt(g('sort').value, 10) || 100 }).then(function(x){
+          if (!x.ok) { m.className = 'msg err'; m.textContent = x.msg; return; }
+          pageOwner(id ? 'Kind of space saved. Every shop\'s rentable m² is up to date.' : 'Kind of space added.');
+        });
+      };
+    }
+    $('styAdd').onclick = function(){ $('styAddSlot').innerHTML = styForm(null); styWire($('styAddSlot')); };
+    box.querySelectorAll('[data-sted]').forEach(function(b){ b.onclick = function(){
+      var t = D.space_types.filter(function(x){ return x.id === Number(b.getAttribute('data-sted')); })[0], sl = b.closest('.item').querySelector('.slot');
+      sl.innerHTML = styForm(t); styWire(sl);
+    }; });
+    box.querySelectorAll('[data-stdel]').forEach(function(b){ b.onclick = function(){
+      var id = Number(b.getAttribute('data-stdel')), t = D.space_types.filter(function(x){ return x.id === id; })[0];
+      askIn(b.closest('.item').querySelector('.slot'), 'Remove ' + t.name + ' from the kinds of space?', 'Yes, remove', function(){
+        return rpc('ctr_space_type_remove', { p_centre: CID, p_code: s.code, p_id: id }).then(function(x){ if (x.ok) pageOwner(t.name + ' removed.'); return x; });
+      });
+    }; });
     $('stSave').onclick = function(){
       var m = $('stMsg'); m.className = 'msg'; m.textContent = 'Saving…';
       rpc('ctr_settings_save', { p_centre: CID, p_code: s.code, p_currency: $('stCur').value, p_share_basis: $('stShare').value, p_vat_no: $('stVat').value }).then(function(x){
@@ -935,7 +1042,7 @@ function ownerCharges(box, s, top){
           m === 'per_m2' ? 'Rate per m² a month (' + cur + ')' : 'Tariff per unit used, e.g. per kWh or kl (' + cur + ')';
         f.querySelector('[data-how]').textContent = {
           fixed: 'The same amount each month. A shop can have its own amount.',
-          per_m2: 'Each shop pays its m² × this rate.',
+          per_m2: 'Each shop pays its rentable m² × this rate.',
           share: 'Each month you enter the centre\'s bill; each shop pays its share by m².',
           metered: 'Shops with a meter pay units used × tariff (+ basic). Shops without a meter pay a share by m².',
           off: 'Not charged.' }[m];
@@ -1140,8 +1247,16 @@ function computeRun(D, lh, period, inp){
     var from = l.start_on > p0 ? l.start_on : p0, days = daysTo(from, p1) + 1, f = days / dim, part = f < 1 ? ' (' + days + ' of ' + dim + ' days)' : '';
     var area = +u.area_m2 || 0, lines = [];
     if (l.end_on && l.end_on < p0) warn.push(u.name + ': lease ended ' + niceY(l.end_on) + '; billed at the current rent until a new lease is saved.');
-    var rent = leaseCalc(l, u, from).rent * f;
-    lines.push({ description: 'Rent ' + monthName(p0) + part, amount: r2(rent), vat_rate: vatOn ? 15 : 0 });
+    var lc = leaseCalc(l, u, from);
+    if (l.rent_basis === 'spaces' && (u.spaces || []).length) {   // one rent line per space (rate after the yearly increases)
+      u.spaces.forEach(function(sp){
+        var rt = r2(spaceRate(sp) * lc.esc);
+        lines.push({ description: 'Rent ' + (sp.type ? sp.type.name.toLowerCase() : 'space') + ' ' + (+sp.area_m2) + ' m² × ' + money(cur, rt) + ' · ' + monthName(p0) + part,
+                     amount: r2(+sp.area_m2 * rt * f), vat_rate: vatOn ? 15 : 0 });
+      });
+    } else {
+      lines.push({ description: 'Rent ' + monthName(p0) + part, amount: r2(lc.rent * f), vat_rate: vatOn ? 15 : 0 });
+    }
     D.charges.forEach(function(ct){
       var row = chargeRow(D, u, ct); if (!row.enabled) return;
       var m = row.method || ct.method, vr = vatOn && ct.vat ? 15 : 0;
@@ -1173,7 +1288,7 @@ function computeRun(D, lh, period, inp){
 var BILL_PERIOD = null, BILL_OPEN = null;
 function ownerBilling(box, s, top){
   box.innerHTML = '<div class="loading">Loading…</div>';
-  rpc('ctr_mgmt_home', { p_centre: CID, p_code: s.code }).then(function(D){
+  mgmtLoad(s).then(function(D){
     if (!D.ok) { box.innerHTML = '<div class="msg err">' + esc(D.msg) + '</div>'; return; }
     var thisMonth = monthStart(D.today);
     var first = !BILL_PERIOD;
