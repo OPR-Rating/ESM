@@ -1,0 +1,1491 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ESM Office</title>
+<style>
+:root{
+  --ink:#1d2433; --quiet:#667085; --line:#d9dee8; --bg:#f4f6fa; --card:#ffffff;
+  --brand:#14325c; --brand2:#1f4a85; --accent:#f2b705; --accentInk:#3a2c00;
+  --bracket:#b8c2d4; --good:#1d7a46; --goodBg:#e3f4ea; --warn:#8a5a00; --warnBg:#fff3d1; --bad:#a3241b; --badBg:#fde7e5;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:inherit}
+.app{max-width:520px;margin:0 auto;min-height:100vh;background:var(--bg);padding-bottom:84px}
+
+/* HEADER */
+.band{background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;padding:18px 16px 26px}
+.band .top{display:flex;align-items:center;gap:12px}
+.logo{flex:0 0 52px;height:52px;border-radius:12px;border:2px dashed rgba(255,255,255,.55);
+  display:flex;align-items:center;justify-content:center;font-size:11px;text-align:center;line-height:1.1;opacity:.9}
+.band h1{margin:0;font-size:22px;line-height:1.15}
+.band .sub{margin-top:3px;font-size:13px;opacity:.85}
+.pill{display:inline-block;margin-top:14px;background:var(--accent);color:var(--accentInk);
+  font-weight:700;font-size:12px;padding:5px 12px;border-radius:999px}
+.testpill{display:inline-block;margin-left:6px;background:#fff;color:var(--bad);font-weight:700;font-size:11px;padding:4px 9px;border-radius:999px}
+
+/* SMALL HEADER (inner pages) */
+.mini{background:var(--brand);color:#fff;padding:12px 16px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:5}
+.mini .back{background:rgba(255,255,255,.15);border:0;color:#fff;border-radius:10px;padding:7px 12px;font-weight:600;cursor:pointer;white-space:nowrap;flex:0 0 auto}
+.mini .t{font-weight:700;font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* TWO SQUARES */
+.squares{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 16px;margin-top:-14px;position:relative}
+.sq{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 12px;text-align:center;
+  box-shadow:0 2px 8px rgba(20,50,92,.08);cursor:pointer}
+.sq .ic{font-size:26px}
+.sq b{display:block;margin-top:6px;font-size:15px}
+.sq span{display:block;font-size:12px;color:var(--quiet);margin-top:2px}
+
+/* SECTIONS */
+.sec{padding:0 16px;margin-top:22px}
+.sec h2{font-size:16px;margin:0 0 8px;display:flex;align-items:center;gap:8px}
+.sec h2 .n{background:var(--brand);color:#fff;font-size:11px;width:22px;height:22px;border-radius:50%;
+  display:inline-flex;align-items:center;justify-content:center}
+.bracket{border:2px dashed var(--bracket);border-radius:14px;padding:14px;background:rgba(255,255,255,.55)}
+.bracket .what{font-size:13px;color:var(--quiet);margin:0 0 10px}
+.box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+.row{display:flex;gap:10px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.row::-webkit-scrollbar{display:none}
+.ph{flex:0 0 132px;height:96px;border-radius:10px;background:repeating-linear-gradient(45deg,#e8ecf3,#e8ecf3 8px,#f1f4f9 8px,#f1f4f9 16px);
+  border:1px solid var(--line);display:flex;align-items:flex-end;padding:8px;font-size:11px;color:var(--quiet)}
+.fuel{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.fuel div{background:#eef1f6;border:1px solid var(--line);border-radius:8px;padding:10px 6px;text-align:center;font-size:11px;color:var(--quiet)}
+.fuel b{display:block;font-size:16px;color:var(--ink);margin-top:2px}
+.li{height:38px;border-radius:8px;background:#eef1f6;border:1px solid var(--line);margin-top:8px;
+  display:flex;align-items:center;padding:0 12px;font-size:12px;color:var(--quiet)}
+
+/* SPECIAL CARDS */
+.sp{flex:0 0 200px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;cursor:pointer;
+  display:flex;flex-direction:column;gap:4px}
+.sp .shop{font-size:11px;color:var(--quiet);text-transform:uppercase;letter-spacing:.04em}
+.sp .ti{font-weight:700;font-size:15px;line-height:1.2}
+.sp .de{font-size:12px;color:var(--quiet);line-height:1.3}
+.sp .bt{margin-top:auto;display:flex;justify-content:space-between;align-items:center;padding-top:6px}
+.price{background:var(--accent);color:var(--accentInk);font-weight:800;font-size:13px;padding:3px 9px;border-radius:999px}
+.until{font-size:11px;color:var(--quiet)}
+
+/* SHOP LIST */
+.shoprow{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:12px;
+  padding:11px 12px;margin-top:8px;cursor:pointer}
+.shoprow:first-child{margin-top:0}
+.av{flex:0 0 38px;height:38px;border-radius:10px;background:#e7edf7;color:var(--brand);font-weight:800;
+  display:flex;align-items:center;justify-content:center;font-size:14px}
+.shoprow .nm{font-weight:600;font-size:15px}
+.shoprow .mt{font-size:12px;color:var(--quiet);margin-top:1px}
+.shoprow .go{margin-left:auto;color:var(--quiet);font-size:18px}
+.tag{font-size:11px;font-weight:700;background:var(--goodBg);color:var(--good);padding:2px 7px;border-radius:999px;margin-left:6px}
+
+/* FORMS + BUTTONS */
+.pad{padding:16px}
+label{display:block;font-size:13px;font-weight:600;margin:12px 0 5px}
+label:first-child{margin-top:0}
+input,select,textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff;font-size:16px}
+textarea{min-height:70px;resize:vertical}
+.hint{font-size:12px;color:var(--quiet);margin-top:4px}
+.b{display:inline-block;border:1px solid var(--line);background:var(--card);border-radius:12px;padding:11px 14px;
+  font-weight:600;font-size:14px;cursor:pointer;text-align:center}
+.b.main{background:var(--brand);border-color:var(--brand);color:#fff}
+.b.ok{background:var(--good);border-color:var(--good);color:#fff}
+.b.no{color:var(--bad);border-color:#efc4bf}
+.b.sm{padding:7px 11px;font-size:13px;border-radius:10px}
+.b.wide{display:block;width:100%;margin-top:14px}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.msg{margin-top:12px;padding:10px 12px;border-radius:10px;font-size:14px}
+.msg.ok{background:var(--goodBg);color:var(--good)}
+.msg.err{background:var(--badBg);color:var(--bad)}
+.msg:empty{display:none}
+.ask{margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--warnBg);color:var(--warn);font-size:14px}
+.st{display:inline-block;font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px}
+.st.pending{background:var(--warnBg);color:var(--warn)}
+.st.approved{background:var(--goodBg);color:var(--good)}
+.st.rejected{background:var(--badBg);color:var(--bad)}
+.st.ended{background:#eceff4;color:var(--quiet)}
+.item{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:10px}
+.item .ti{font-weight:700}
+.item .mt{font-size:12px;color:var(--quiet);margin-top:3px}
+.item .de{font-size:13px;margin-top:5px}
+.code{font-family:ui-monospace,Consolas,monospace;font-weight:700;letter-spacing:.08em;background:#eef1f6;padding:2px 7px;border-radius:6px}
+.tabs{display:flex;gap:6px;padding:12px 16px 0;flex-wrap:wrap}
+.tab{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:7px 13px;font-size:13px;font-weight:600;cursor:pointer}
+.tab.on{background:var(--brand);border-color:var(--brand);color:#fff}
+.cnt{display:inline-block;min-width:18px;padding:0 5px;margin-left:4px;border-radius:999px;background:var(--accent);color:var(--accentInk);font-size:11px;text-align:center}
+.cats{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin-top:10px}
+.cats::-webkit-scrollbar{display:none}
+/* e2: leases and charges */
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 12px}
+.tile .k{font-size:11px;color:var(--quiet);text-transform:uppercase;letter-spacing:.04em}
+.tile .v{font-size:18px;font-weight:800;margin-top:3px}
+.tile .s{font-size:12px;color:var(--quiet);margin-top:1px}
+.att{display:flex;gap:8px;align-items:flex-start;font-size:14px;padding:8px 0;border-top:1px solid var(--line);cursor:pointer}
+.att:first-child{border-top:0}
+.dot{flex:0 0 8px;height:8px;border-radius:50%;margin-top:6px}
+.dot.red{background:var(--bad)} .dot.amber{background:#d99a00} .dot.grey{background:#98a2b3}
+.rr{cursor:pointer}
+.rr .top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.rr .amt{font-weight:800;white-space:nowrap}
+.st.empty{background:#eceff4;color:var(--quiet)}
+.sub{font-size:13px;font-weight:700;color:var(--brand);margin:16px 0 2px;text-transform:uppercase;letter-spacing:.04em}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.two label{margin-top:12px}
+.two > div{min-width:0}
+.two input,.two select{min-width:0;max-width:100%}
+input[type=date]{-webkit-appearance:none;appearance:none;min-height:44px}
+.crow{border-top:1px solid var(--line);padding:10px 0}
+.crow:first-of-type{border-top:0}
+.crow .hd{display:flex;align-items:center;gap:10px;justify-content:space-between}
+.crow .nm{font-weight:700;font-size:14px}
+.crow .est{font-size:12px;color:var(--quiet);margin-top:4px}
+.chk{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;margin:0;white-space:nowrap}
+.chk input{width:20px;height:20px;accent-color:var(--brand)}
+.crow select,.crow input[type=text]{margin-top:6px;font-size:15px;padding:8px 10px}
+.empty{font-size:14px;color:var(--quiet);padding:6px 2px}
+.info{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:14px}
+.info b{color:var(--quiet);font-weight:600}
+.h3{font-size:15px;font-weight:700;margin:20px 0 4px}
+
+/* BOTTOM BAR */
+.bar{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);
+  padding:10px 16px calc(10px + env(safe-area-inset-bottom));z-index:6}
+.bar .in{max-width:488px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{border:1px solid var(--line);background:var(--card);border-radius:12px;padding:11px 8px;text-align:center;
+  font-weight:600;font-size:14px;color:var(--ink);cursor:pointer}
+.btn.main{background:var(--brand);border-color:var(--brand);color:#fff}
+.foot{text-align:center;font-size:11px;color:var(--quiet);margin:26px 0 8px}
+.loading{padding:60px 16px;text-align:center;color:var(--quiet)}
+</style>
+</head>
+<body>
+<div class="app" id="app"><div class="loading">Loading…</div></div>
+<nav class="bar"><div class="in" id="bar"></div></nav>
+
+<script>
+(function(){
+'use strict';
+var ESM_BUILD = 'ESM e3';
+var MODE = 'office';   // Block 1 = 'shop' (index.html: shoppers + tenants) · Block 2 = 'office' (office.html). Set by build_esm.py.
+var SB_URL = 'https://pqduivcxwykcixqsfrwi.supabase.co';
+var SB_KEY = 'sb_publishable_Cl8uDRrLqx9VMaC3lifpWA_Wl91vVy2';   // OTR-Tennis public (publishable) key
+var CATS = ['Food','Fashion','Health','Services','Fuel & car','Other'];
+
+var qs = new URLSearchParams(location.search);
+var CID = qs.get('c') ? Number(qs.get('c')) : null;
+var DOOR = null;          // last door data
+var APP = document.getElementById('app');
+var BAR = document.getElementById('bar');
+
+// ---------- helpers ----------
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
+  return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+var DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function ymd(s){ var p = String(s).slice(0,10).split('-'); return new Date(Date.UTC(+p[0], +p[1]-1, +p[2])); }
+function nice(s){ var d = ymd(s); return DAYS[d.getUTCDay()] + ' ' + d.getUTCDate() + ' ' + MONTHS[d.getUTCMonth()]; }
+function addDays(s, n){ var d = ymd(s); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0,10); }
+function initials(n){ var w = String(n).trim().split(/\s+/); return ((w[0]||'')[0]||'').toUpperCase() + ((w[1]||'')[0]||'').toUpperCase(); }
+function startsIn(name, q){ // first letters only: any word of the name starts with what was typed
+  q = q.trim().toLowerCase(); if (!q) return true;
+  return String(name).toLowerCase().split(/[\s&·,\-\/]+/).some(function(w){ return w.indexOf(q) === 0; }) ||
+         String(name).toLowerCase().indexOf(q) === 0;
+}
+function $(id){ return document.getElementById(id); }
+
+function rpc(fn, args){
+  return fetch(SB_URL + '/rest/v1/rpc/' + fn, {
+    method: 'POST',
+    headers: { 'apikey': SB_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify(args || {})
+  }).then(function(r){
+    return r.json().catch(function(){ return null; }).then(function(j){
+      if (!r.ok) return { ok:false, msg: (j && j.message) ? j.message : 'Could not reach the server.' };
+      return j || { ok:false, msg:'Empty answer from the server.' };
+    });
+  }).catch(function(){ return { ok:false, msg:'No connection. Please check your internet.' }; });
+}
+
+// login kept for this browser tab only
+function sess(){ try { return JSON.parse(sessionStorage.getItem('esm_' + CID) || 'null'); } catch(e){ return null; } }
+function setSess(v){ try { if (v) sessionStorage.setItem('esm_' + CID, JSON.stringify(v)); else sessionStorage.removeItem('esm_' + CID); } catch(e){} }
+
+function go(h){ if (location.hash === h) route(); else location.hash = h; }
+function top0(){ window.scrollTo(0,0); }
+
+function mini(title, backTo){
+  return '<div class="mini">' + (backTo ? '<button class="back" data-go="' + esc(backTo) + '">‹ Back</button>' : '') +
+    '<div class="t">' + esc(title) + '</div></div>';
+}
+
+function bar(){
+  if (MODE === 'office') { BAR.parentNode.style.display = 'none'; return; }   // Block 2 has no bottom bar
+  var s = sess();
+  BAR.style.gridTemplateColumns = '1fr';
+  BAR.innerHTML = s && s.role === 'shop'
+    ? '<div class="btn main" data-go="#myshop">My shop</div>'
+    : '<div class="btn main" data-go="#login/shop">Tenant login</div>';
+}
+
+document.addEventListener('click', function(e){
+  var t = e.target.closest('[data-go]');
+  if (t) { e.preventDefault(); go(t.getAttribute('data-go')); }
+});
+
+// ---------- door data ----------
+function loadDoor(){
+  return rpc('ctr_door', { p_centre: CID }).then(function(d){
+    if (d && d.ok) { DOOR = d; if (!CID) CID = d.centre.id; }
+    return d;
+  });
+}
+
+function specialCard(s){
+  return '<div class="sp" data-go="#shop/' + s.unit_id + '">' +
+    '<div class="shop">' + esc(s.unit) + '</div>' +
+    '<div class="ti">' + esc(s.title) + '</div>' +
+    (s.detail ? '<div class="de">' + esc(s.detail) + '</div>' : '') +
+    '<div class="bt">' + (s.price ? '<span class="price">' + esc(s.price) + '</span>' : '<span></span>') +
+    '<span class="until">until ' + nice(s.ends_on) + '</span></div></div>';
+}
+
+function shopRow(u, nSpecials){
+  var meta = [u.category, u.location, u.hours].filter(Boolean).map(esc).join(' · ');
+  return '<div class="shoprow" data-go="#shop/' + u.id + '"><div class="av">' + esc(initials(u.name)) + '</div>' +
+    '<div><div class="nm">' + esc(u.name) + (nSpecials ? '<span class="tag">' + nSpecials + ' special' + (nSpecials > 1 ? 's' : '') + '</span>' : '') +
+    '</div><div class="mt">' + meta + '</div></div><div class="go">›</div></div>';
+}
+
+function countBy(list){ var m = {}; list.forEach(function(s){ m[s.unit_id] = (m[s.unit_id] || 0) + 1; }); return m; }
+
+// ---------- pages ----------
+function pageDoor(){
+  var c = DOOR.centre, sp = DOOR.specials, units = DOOR.units, per = countBy(sp);
+  APP.innerHTML =
+    '<header class="band"><div class="top"><div class="logo">centre<br>logo</div><div>' +
+      '<h1>' + esc(c.name) + '</h1><div class="sub">' + esc(c.tagline || '') + '</div></div></div>' +
+      (c.hours ? '<span class="pill">Open: ' + esc(c.hours) + '</span>' : '') +
+      (c.is_test ? '<span class="testpill">TEST</span>' : '') +
+    '</header>' +
+    '<div class="squares">' +
+      '<div class="sq" id="sqSpecials"><div class="ic">🏷️</div><b>Today\'s specials</b><span>' + sp.length + ' from the shops</span></div>' +
+      '<div class="sq" data-go="#shops"><div class="ic">🛍️</div><b>Find a shop</b><span>' + units.length + ' shops &amp; services</span></div>' +
+    '</div>' +
+    '<section class="sec" id="secSpecials"><h2><span class="n">1</span>Specials</h2>' +
+      (sp.length ? '<div class="row">' + sp.map(specialCard).join('') + '</div>'
+                 : '<div class="box empty">No specials right now. Check again soon.</div>') +
+    '</section>' +
+    '<section class="sec"><h2><span class="n">2</span>Shops &amp; services</h2><div>' +
+      (units.length ? units.map(function(u){ return shopRow(u, per[u.id]); }).join('') : '<div class="box empty">No shops yet.</div>') +
+    '</div></section>' +
+    '<section class="sec"><h2><span class="n">3</span>Service station</h2><div class="bracket">' +
+      '<p class="what">To come: today\'s fuel prices, car wash and forecourt specials.</p>' +
+      '<div class="fuel"><div>Petrol 93<b>—</b></div><div>Petrol 95<b>—</b></div><div>Diesel<b>—</b></div></div></div></section>' +
+    '<section class="sec"><h2><span class="n">4</span>Events &amp; notices</h2><div class="bracket">' +
+      '<p class="what">To come: what\'s on at the centre this week.</p><div class="li">event</div><div class="li">event</div></div></section>' +
+    '<section class="sec"><h2><span class="n">5</span>Hours &amp; map</h2><div class="box"><div class="info">' +
+      (c.hours ? '<b>Hours</b><span>' + esc(c.hours) + '</span>' : '') +
+      (c.phone ? '<b>Phone</b><a href="tel:' + esc(c.phone.replace(/\s/g,'')) + '">' + esc(c.phone) + '</a>' : '') +
+      (c.address ? '<b>Address</b><span>' + esc(c.address) + '</span>' : '') +
+      '</div><div class="row" style="margin-top:12px"><div class="ph" style="flex-basis:100%;height:110px">map — to come</div></div></div></section>' +
+    '<div class="foot">' + ESM_BUILD + '</div>';
+  $('sqSpecials').onclick = function(){ $('secSpecials').scrollIntoView({ behavior:'smooth' }); };
+}
+
+function pageShops(){
+  var units = DOOR.units, per = countBy(DOOR.specials), cat = '';
+  APP.innerHTML = mini('Find a shop', '#') +
+    '<div class="pad"><input id="q" placeholder="Type the first letters of a shop" autocomplete="off">' +
+    '<div class="cats" id="cats"></div><div id="list" style="margin-top:12px"></div></div>';
+  var used = CATS.filter(function(k){ return units.some(function(u){ return u.category === k; }); });
+  function drawCats(){
+    $('cats').innerHTML = ['All'].concat(used).map(function(k){
+      var on = (k === 'All' ? cat === '' : cat === k);
+      return '<div class="tab' + (on ? ' on' : '') + '" data-cat="' + esc(k) + '">' + esc(k) + '</div>'; }).join('');
+  }
+  function draw(){
+    var q = $('q').value;
+    var list = units.filter(function(u){ return (!cat || u.category === cat) && startsIn(u.name, q); });
+    $('list').innerHTML = list.length ? list.map(function(u){ return shopRow(u, per[u.id]); }).join('') : '<div class="empty">No shop starts with that.</div>';
+  }
+  $('cats').onclick = function(e){ var t = e.target.closest('[data-cat]'); if (!t) return;
+    var k = t.getAttribute('data-cat'); cat = (k === 'All' ? '' : k); drawCats(); draw(); };
+  $('q').oninput = draw; drawCats(); draw();
+}
+
+function pageShop(id){
+  var u = DOOR.units.filter(function(x){ return x.id === id; })[0];
+  if (!u) { APP.innerHTML = mini('Shop', '#') + '<div class="pad empty">This shop is not on the door any more.</div>'; return; }
+  var sp = DOOR.specials.filter(function(s){ return s.unit_id === id; });
+  APP.innerHTML = mini(u.name, '#') +
+    '<div class="pad"><div class="box"><div style="display:flex;gap:12px;align-items:center">' +
+      '<div class="av" style="flex-basis:48px;height:48px;font-size:17px">' + esc(initials(u.name)) + '</div>' +
+      '<div><div style="font-weight:700;font-size:18px">' + esc(u.name) + '</div><div class="hint">' + esc(u.category) + '</div></div></div>' +
+      '<div class="info" style="margin-top:14px">' +
+        (u.location ? '<b>Where</b><span>' + esc(u.location) + '</span>' : '') +
+        (u.hours ? '<b>Hours</b><span>' + esc(u.hours) + '</span>' : '') +
+        (u.phone ? '<b>Phone</b><a href="tel:' + esc(u.phone.replace(/\s/g,'')) + '">' + esc(u.phone) + '</a>' : '') +
+      '</div></div>' +
+      '<div class="h3">Specials</div>' +
+      (sp.length ? sp.map(function(s){
+        return '<div class="item"><div class="ti">' + esc(s.title) + (s.price ? ' <span class="price">' + esc(s.price) + '</span>' : '') + '</div>' +
+          (s.detail ? '<div class="de">' + esc(s.detail) + '</div>' : '') + '<div class="mt">until ' + nice(s.ends_on) + '</div></div>'; }).join('')
+        : '<div class="empty">No specials from this shop right now.</div>') +
+    '</div>';
+}
+
+function pageLogin(role){
+  var isOwner = role === 'owner';
+  APP.innerHTML = mini(isOwner ? 'Centre office · owner login' : 'Tenant login', isOwner ? null : '#') +
+    '<div class="pad"><div class="box">' +
+      '<label for="code">' + (isOwner ? 'Owner code' : 'Your shop code') + '</label>' +
+      '<input id="code" inputmode="numeric" maxlength="6" autocomplete="off" placeholder="6 digits">' +
+      '<div class="hint">' + (isOwner ? 'The code for the centre manager.' : 'The centre manager gives each shop its own code.') + '</div>' +
+      '<div class="b main wide" id="open">Open</div><div class="msg" id="m"></div>' +
+    '</div></div>';
+  function open(){
+    var code = $('code').value.trim();
+    if (!/^\d{6}$/.test(code)) { $('m').className = 'msg err'; $('m').textContent = 'The code is 6 digits.'; return; }
+    $('m').className = 'msg'; $('m').textContent = 'Checking…';
+    rpc('ctr_login', { p_centre: CID, p_code: code }).then(function(r){
+      if (!r.ok) { $('m').className = 'msg err'; $('m').textContent = r.msg; return; }
+      if (isOwner && r.role !== 'owner') { $('m').className = 'msg err'; $('m').textContent = 'That is a shop code. Shops log in on the centre\'s shop page, not in the office.'; return; }
+      if (!isOwner && r.role !== 'shop') { $('m').className = 'msg err'; $('m').textContent = 'That is the owner code. The owner logs in at the centre office page.'; return; }
+      setSess({ role: r.role, code: code, unit: r.unit ? r.unit.name : null }); bar();
+      go(isOwner ? '#owner' : '#myshop');
+    });
+  }
+  $('open').onclick = open;
+  $('code').onkeydown = function(e){ if (e.key === 'Enter') open(); };
+  $('code').focus();
+}
+
+function statusPill(s, today){
+  if (s.status !== 'rejected' && s.ends_on < today) return '<span class="st ended">Ended</span>';
+  if (s.status === 'pending') return '<span class="st pending">Waiting for approval</span>';
+  if (s.status === 'approved') return '<span class="st approved">On the door</span>';
+  return '<span class="st rejected">Not approved</span>';
+}
+
+function pageMyShop(note){
+  var s = sess();
+  if (!s || s.role !== 'shop') { go('#login/shop'); return; }
+  APP.innerHTML = mini(s.unit || 'My shop', '#') + '<div class="loading">Loading…</div>';
+  rpc('ctr_shop_home', { p_centre: CID, p_code: s.code }).then(function(r){
+    if (!r.ok) { setSess(null); bar(); APP.innerHTML = mini('My shop', '#') + '<div class="pad"><div class="msg err">' + esc(r.msg) + '</div></div>'; return; }
+    var today = r.today;
+    APP.innerHTML = mini(r.unit.name, '#') +
+      '<div class="pad">' +
+      '<div class="box"><div style="font-weight:700;font-size:16px">Post a special</div>' +
+        '<div class="hint">The centre manager checks it, then it shows on the door.</div>' +
+        '<label for="ti">Heading</label><input id="ti" maxlength="60" placeholder="e.g. 2 for 1 on fresh bread">' +
+        '<label for="de">Details (optional)</label><textarea id="de" maxlength="300" placeholder="e.g. Every morning before 10:00"></textarea>' +
+        '<label for="pr">Price (optional)</label><input id="pr" maxlength="30" placeholder="e.g. E25">' +
+        '<label for="en">Last day</label><input id="en" type="date" min="' + today + '" max="' + addDays(today, 60) + '" value="' + addDays(today, 7) + '">' +
+        '<div class="b main wide" id="send">Send for approval</div><div class="msg' + (note ? ' ok' : '') + '" id="m">' + esc(note || '') + '</div>' +
+      '</div>' +
+      '<div id="acct"></div>' +
+      '<div class="h3">Your specials</div><div id="mine"></div>' +
+      '<div class="b wide" id="out">Log out</div></div>';
+    $('mine').innerHTML = r.specials.length ? r.specials.map(function(x){
+      return '<div class="item" data-id="' + x.id + '"><div style="display:flex;justify-content:space-between;gap:8px;align-items:start">' +
+        '<div class="ti">' + esc(x.title) + '</div>' + statusPill(x, today) + '</div>' +
+        (x.detail ? '<div class="de">' + esc(x.detail) + '</div>' : '') +
+        '<div class="mt">' + (x.price ? esc(x.price) + ' · ' : '') + 'until ' + nice(x.ends_on) + '</div>' +
+        (x.status === 'rejected' && x.reason ? '<div class="mt">Reason: ' + esc(x.reason) + '</div>' : '') +
+        '<div class="btns"><div class="b sm no" data-rm="' + x.id + '">Remove</div></div><div class="slot"></div></div>';
+    }).join('') : '<div class="empty">You have not posted any specials yet.</div>';
+    shopAccount($('acct'), s);
+    $('send').onclick = function(){
+      var m = $('m');
+      m.className = 'msg'; m.textContent = 'Sending…';
+      rpc('ctr_special_post', { p_centre: CID, p_code: s.code, p_title: $('ti').value, p_detail: $('de').value,
+                                p_price: $('pr').value, p_ends: $('en').value || null }).then(function(x){
+        if (!x.ok) { m.className = 'msg err'; m.textContent = x.msg; return; }
+        pageMyShop('Sent. The centre manager will check it before it goes on the door.');
+      });
+    };
+    $('mine').onclick = function(e){
+      var t = e.target.closest('[data-rm]'); if (!t) return;
+      var id = Number(t.getAttribute('data-rm')), slot = t.closest('.item').querySelector('.slot');
+      askIn(slot, 'Remove this special?', 'Yes, remove it', function(){
+        return rpc('ctr_special_remove', { p_centre: CID, p_code: s.code, p_id: id }).then(function(x){
+          if (x.ok) pageMyShop('Removed.'); return x; });
+      });
+    };
+    $('out').onclick = function(){ setSess(null); bar(); go('#'); };
+  });
+}
+
+// a yes/no question shown inside the card (no pop-ups)
+function askIn(slot, q, yes, act){
+  slot.innerHTML = '<div class="ask">' + esc(q) + '<div class="btns"><div class="b sm ok" data-y>' + esc(yes) +
+    '</div><div class="b sm" data-n>No</div></div><div class="msg" data-m></div></div>';
+  slot.querySelector('[data-n]').onclick = function(){ slot.innerHTML = ''; };
+  slot.querySelector('[data-y]').onclick = function(){
+    var m = slot.querySelector('[data-m]'); m.className = 'msg'; m.textContent = 'Working…';
+    act().then(function(x){ if (x && !x.ok) { m.className = 'msg err'; m.textContent = x.msg; } });
+  };
+}
+
+var OWNER_TAB = 'approve';
+function pageOwner(note){
+  var s = sess();
+  if (!s || s.role !== 'owner') { go('#login/owner'); return; }
+  APP.innerHTML = mini('Centre office', null) + '<div class="loading">Loading…</div>';
+  rpc('ctr_owner_home', { p_centre: CID, p_code: s.code }).then(function(r){
+    if (!r.ok) { setSess(null); bar(); APP.innerHTML = mini('Centre office', null) + '<div class="pad"><div class="msg err">' + esc(r.msg) + '</div></div>'; return; }
+    APP.innerHTML = mini('Centre office · ' + r.centre.name, null) +
+      '<div class="tabs">' +
+        '<div class="tab' + (OWNER_TAB === 'approve' ? ' on' : '') + '" data-tab="approve">To approve' + (r.pending.length ? '<span class="cnt">' + r.pending.length + '</span>' : '') + '</div>' +
+        '<div class="tab' + (OWNER_TAB === 'shops' ? ' on' : '') + '" data-tab="shops">Shops</div>' +
+        '<div class="tab' + (OWNER_TAB === 'leases' ? ' on' : '') + '" data-tab="leases">Leases</div>' +
+        '<div class="tab' + (OWNER_TAB === 'charges' ? ' on' : '') + '" data-tab="charges">Charges</div>' +
+        '<div class="tab' + (OWNER_TAB === 'billing' ? ' on' : '') + '" data-tab="billing">Billing</div>' +
+        '<div class="tab' + (OWNER_TAB === 'statements' ? ' on' : '') + '" data-tab="statements">Statements</div>' +
+        '<div class="tab' + (OWNER_TAB === 'centre' ? ' on' : '') + '" data-tab="centre">Centre</div>' +
+      '</div><div class="pad" id="ow"></div>';
+    APP.querySelector('.tabs').onclick = function(e){ var t = e.target.closest('[data-tab]'); if (!t) return;
+      OWNER_TAB = t.getAttribute('data-tab'); pageOwner(); };
+    var box = $('ow');
+    var top = note ? '<div class="msg ok">' + esc(note) + '</div>' : '';
+    if (OWNER_TAB === 'approve') ownerApprove(box, r, s, top);
+    else if (OWNER_TAB === 'shops') ownerShops(box, r, s, top);
+    else if (OWNER_TAB === 'leases') ownerLeases(box, s, top);
+    else if (OWNER_TAB === 'charges') ownerCharges(box, s, top);
+    else if (OWNER_TAB === 'billing') ownerBilling(box, s, top);
+    else if (OWNER_TAB === 'statements') ownerStatements(box, s, top);
+    else ownerCentre(box, r, s, top);
+  });
+}
+
+function ownerApprove(box, r, s, top){
+  function card(x, pending){
+    return '<div class="item"><div class="mt" style="margin-top:0">' + esc(x.unit) + '</div>' +
+      '<div class="ti">' + esc(x.title) + (x.price ? ' <span class="price">' + esc(x.price) + '</span>' : '') + '</div>' +
+      (x.detail ? '<div class="de">' + esc(x.detail) + '</div>' : '') +
+      '<div class="mt">until ' + nice(x.ends_on) + '</div>' +
+      (pending ? '<div class="btns"><div class="b sm ok" data-ap="' + x.id + '">Approve</div><div class="b sm no" data-rj="' + x.id + '">Not approved</div></div>'
+               : '<div class="btns"><div class="b sm no" data-rm="' + x.id + '">Take off the door</div></div>') +
+      '<div class="slot"></div></div>';
+  }
+  box.innerHTML = top +
+    '<div class="h3" style="margin-top:0">Waiting for you</div>' +
+    (r.pending.length ? r.pending.map(function(x){ return card(x, true); }).join('') : '<div class="empty">Nothing waiting. All specials are dealt with.</div>') +
+    '<div class="h3">On the door now</div>' +
+    (r.running.length ? r.running.map(function(x){ return card(x, false); }).join('') : '<div class="empty">No specials on the door.</div>') +
+    '<div class="b wide" id="out">Log out</div>';
+  box.onclick = function(e){
+    var t;
+    if ((t = e.target.closest('[data-ap]'))) {
+      var id = Number(t.getAttribute('data-ap'));
+      rpc('ctr_special_decide', { p_centre: CID, p_code: s.code, p_id: id, p_approve: true, p_reason: null }).then(function(x){
+        if (x.ok) pageOwner('Approved. It is on the door now.'); else showErr(t, x.msg); });
+    } else if ((t = e.target.closest('[data-rj]'))) {
+      var rid = Number(t.getAttribute('data-rj')), slot = t.closest('.item').querySelector('.slot');
+      slot.innerHTML = '<div class="ask">Why not? (the shop sees this)<input data-why maxlength="200" style="margin-top:8px" placeholder="e.g. Please add the price">' +
+        '<div class="btns"><div class="b sm no" data-y>Not approved</div><div class="b sm" data-n>Cancel</div></div><div class="msg" data-m></div></div>';
+      slot.querySelector('[data-n]').onclick = function(ev){ ev.stopPropagation(); slot.innerHTML = ''; };
+      slot.querySelector('[data-y]').onclick = function(ev){ ev.stopPropagation();
+        rpc('ctr_special_decide', { p_centre: CID, p_code: s.code, p_id: rid, p_approve: false,
+                                    p_reason: slot.querySelector('[data-why]').value }).then(function(x){
+          if (x.ok) pageOwner('Marked not approved. The shop can see why.');
+          else { var m = slot.querySelector('[data-m]'); m.className = 'msg err'; m.textContent = x.msg; } });
+      };
+    } else if ((t = e.target.closest('[data-rm]'))) {
+      var mid = Number(t.getAttribute('data-rm'));
+      askIn(t.closest('.item').querySelector('.slot'), 'Take this special off the door?', 'Yes, take it off', function(){
+        return rpc('ctr_special_remove', { p_centre: CID, p_code: s.code, p_id: mid }).then(function(x){
+          if (x.ok) pageOwner('Taken off the door.'); return x; });
+      });
+    } else if (e.target.id === 'out') { setSess(null); bar(); go('#'); }
+  };
+}
+
+function showErr(near, msg){
+  var slot = near.closest('.item').querySelector('.slot');
+  slot.innerHTML = '<div class="msg err">' + esc(msg) + '</div>';
+}
+
+function shopForm(u){
+  u = u || {};
+  return '<div class="box" style="margin-top:10px">' +
+    '<div style="font-weight:700">' + (u.id ? 'Change ' + esc(u.name) : 'Add a shop') + '</div>' +
+    '<label>Shop name</label><input data-f="name" maxlength="60" value="' + esc(u.name) + '">' +
+    '<label>Kind</label><select data-f="category">' + CATS.map(function(k){
+      return '<option' + (k === (u.category || 'Other') ? ' selected' : '') + '>' + esc(k) + '</option>'; }).join('') + '</select>' +
+    '<label>Where in the centre</label><input data-f="location" maxlength="40" placeholder="e.g. Shop 7, ground floor" value="' + esc(u.location) + '">' +
+    '<label>Phone</label><input data-f="phone" maxlength="30" value="' + esc(u.phone) + '">' +
+    '<label>Hours</label><input data-f="hours" maxlength="40" placeholder="e.g. 08:00–17:00" value="' + esc(u.hours) + '">' +
+    '<label>Place in the list</label><input data-f="sort" inputmode="numeric" maxlength="4" value="' + esc(u.sort == null ? 100 : u.sort) + '">' +
+    '<div class="hint">Lower numbers show first.</div>' +
+    '<div class="btns"><div class="b sm main" data-save="' + (u.id || '') + '">Save</div><div class="b sm" data-cancel>Cancel</div></div>' +
+    '<div class="msg" data-m></div></div>';
+}
+
+function ownerShops(box, r, s, top){
+  box.innerHTML = top + '<div class="b main wide" style="margin-top:0" id="add">Add a shop</div><div id="addSlot"></div>' +
+    '<div class="h3">' + r.units.length + ' shops</div>' +
+    r.units.map(function(u){
+      return '<div class="item" data-u="' + u.id + '"><div class="ti">' + esc(u.name) + '</div>' +
+        '<div class="mt">' + [u.category, u.location, u.hours, u.phone].filter(Boolean).map(esc).join(' · ') + '</div>' +
+        '<div class="mt">Shop code: <span class="code">' + esc(u.code || '—') + '</span></div>' +
+        '<div class="btns"><div class="b sm" data-ed="' + u.id + '">Change</div><div class="b sm" data-nc="' + u.id + '">New code</div>' +
+        '<div class="b sm no" data-del="' + u.id + '">Remove</div></div><div class="slot"></div></div>';
+    }).join('') + '<div class="b wide" id="out">Log out</div>';
+  function find(id){ return r.units.filter(function(u){ return u.id === id; })[0]; }
+  function wire(holder){
+    holder.querySelector('[data-cancel]').onclick = function(ev){ ev.stopPropagation(); holder.innerHTML = ''; };
+    holder.querySelector('[data-save]').onclick = function(ev){ ev.stopPropagation();
+      var f = {}; holder.querySelectorAll('[data-f]').forEach(function(el){ f[el.getAttribute('data-f')] = el.value; });
+      var id = holder.querySelector('[data-save]').getAttribute('data-save'), m = holder.querySelector('[data-m]');
+      m.className = 'msg'; m.textContent = 'Saving…';
+      rpc('ctr_unit_save', { p_centre: CID, p_code: s.code, p_id: id ? Number(id) : null, p_name: f.name, p_category: f.category,
+          p_location: f.location, p_phone: f.phone, p_hours: f.hours, p_sort: parseInt(f.sort, 10) || 100 }).then(function(x){
+        if (!x.ok) { m.className = 'msg err'; m.textContent = x.msg; return; }
+        pageOwner(id ? 'Saved.' : 'Shop added. Its code is ' + x.code + '. Give it to the shop.');
+      });
+    };
+  }
+  box.onclick = function(e){
+    var t;
+    if (e.target.id === 'add') { $('addSlot').innerHTML = shopForm(null); wire($('addSlot')); }
+    else if ((t = e.target.closest('[data-ed]'))) { var sl = t.closest('.item').querySelector('.slot');
+      sl.innerHTML = shopForm(find(Number(t.getAttribute('data-ed')))); wire(sl); }
+    else if ((t = e.target.closest('[data-nc]'))) { var nid = Number(t.getAttribute('data-nc'));
+      askIn(t.closest('.item').querySelector('.slot'), 'Give ' + find(nid).name + ' a new code? The old code stops working.', 'Yes, new code', function(){
+        return rpc('ctr_unit_newcode', { p_centre: CID, p_code: s.code, p_id: nid }).then(function(x){
+          if (x.ok) pageOwner('New code for ' + find(nid).name + ': ' + x.code + '. Give it to the shop.'); return x; }); }); }
+    else if ((t = e.target.closest('[data-del]'))) { var did = Number(t.getAttribute('data-del'));
+      askIn(t.closest('.item').querySelector('.slot'), 'Remove ' + find(did).name + '? It goes off the door and its code stops working.', 'Yes, remove', function(){
+        return rpc('ctr_unit_remove', { p_centre: CID, p_code: s.code, p_id: did }).then(function(x){
+          if (x.ok) pageOwner(find(did).name + ' removed.'); return x; }); }); }
+    else if (e.target.id === 'out') { setSess(null); bar(); go('#'); }
+  };
+}
+
+function ownerCentre(box, r, s, top){
+  var c = r.centre;
+  box.innerHTML = top + '<div class="box">' +
+    '<label>Centre name</label><input id="cn" maxlength="60" value="' + esc(c.name) + '">' +
+    '<label>Line under the name</label><input id="ct" maxlength="80" value="' + esc(c.tagline) + '">' +
+    '<label>Opening hours</label><input id="ch" maxlength="120" value="' + esc(c.hours) + '">' +
+    '<label>Phone</label><input id="cp" maxlength="40" value="' + esc(c.phone) + '">' +
+    '<label>Address</label><input id="ca" maxlength="120" value="' + esc(c.address) + '">' +
+    '<div class="b main wide" id="csave">Save</div><div class="msg" id="m"></div></div>' +
+    '<div class="b wide" id="out">Log out</div>';
+  $('csave').onclick = function(){
+    var m = $('m'); m.className = 'msg'; m.textContent = 'Saving…';
+    rpc('ctr_centre_save', { p_centre: CID, p_code: s.code, p_name: $('cn').value, p_tagline: $('ct').value,
+        p_hours: $('ch').value, p_phone: $('cp').value, p_address: $('ca').value }).then(function(x){
+      if (!x.ok) { m.className = 'msg err'; m.textContent = x.msg; return; }
+      pageOwner('Centre details saved.');
+    });
+  };
+  $('out').onclick = function(){ setSess(null); bar(); go('#'); };
+}
+
+// =====================================================================
+// e2 · LEASES AND CHARGES (owner only)
+// =====================================================================
+var MGMT_OPEN = null;      // the unit whose card is open on the Leases tab
+var METHODS = { fixed:'Fixed amount', per_m2:'Rate per m²', share:'Share by area', metered:'Metered', off:'Off' };
+
+function money(cur, n){
+  if (n == null || isNaN(n)) return '—';
+  var neg = n < 0, p = Math.abs(Math.round(n * 100) / 100).toFixed(2).split('.');
+  return (neg ? '-' : '') + cur + ' ' + p[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + '.' + p[1];
+}
+function niceY(s){ var d = ymd(s); return d.getUTCDate() + ' ' + MONTHS[d.getUTCMonth()] + ' ' + d.getUTCFullYear(); }
+function numStr(n){ return n == null ? '' : String(+n); }
+function m2s(n){ return n == null || n === '' ? '— m²' : String(+n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' m²'; }
+function daysTo(a, b){ return Math.round((ymd(b) - ymd(a)) / 864e5); }
+function addYears(s, n){ var d = ymd(s); d.setUTCFullYear(d.getUTCFullYear() + n); return d.toISOString().slice(0,10); }
+function fullYears(a, b){ if (b < a) return 0; var y = +b.slice(0,4) - +a.slice(0,4); if (b.slice(5) < a.slice(5)) y--; return Math.max(0, y); }
+function toNum(v){ v = String(v == null ? '' : v).replace(/\s/g, '').replace(',', '.'); return v === '' ? null : Number(v); }
+
+// rent now (after the yearly increases), the next increase, and the lease's state
+function leaseCalc(l, u, today){
+  var pct = +l.increase_pct || 0;
+  var base = l.rent_basis === 'm2' ? (+l.rent_value) * (+u.area_m2 || 0) : +l.rent_value;
+  var yrs = l.start_on > today ? 0 : fullYears(l.start_on, today);
+  var rent = Math.round(base * Math.pow(1 + pct / 100, yrs) * 100) / 100;
+  var next = pct > 0 ? addYears(l.start_on, yrs + 1) : null;
+  var c = { rent: rent, next: next, nextRent: Math.round(rent * (1 + pct / 100) * 100) / 100,
+            toNext: next ? daysTo(today, next) : null, toEnd: l.end_on ? daysTo(today, l.end_on) : null };
+  c.state = l.start_on > today ? 'starts' : (l.end_on && l.end_on < today) ? 'past' : (c.toEnd != null && c.toEnd <= 90) ? 'ending' : 'running';
+  return c;
+}
+function leasePill(c, l){
+  if (c.state === 'past') return '<span class="st rejected">Past its end</span>';
+  if (c.state === 'ending') return '<span class="st pending">Ends in ' + c.toEnd + ' days</span>';
+  if (c.state === 'starts') return '<span class="st ended">Starts ' + niceY(l.start_on) + '</span>';
+  return '<span class="st approved">Running</span>';
+}
+
+function mgmtTotals(D){
+  var leaseOf = {}; D.leases.forEach(function(l){ leaseOf[l.unit_id] = l; });
+  var all = 0, let_ = 0;
+  D.units.forEach(function(u){ var a = +u.area_m2 || 0; all += a; if (!u.vacant && leaseOf[u.id]) let_ += a; });
+  return { leaseOf: leaseOf, all: all, let_: let_, basis: D.centre.share_basis === 'let' ? let_ : all };
+}
+
+// what one charge comes to for one shop each month (or how it will be worked out)
+function chargeRow(D, u, ct){
+  var r = D.unit_charges.filter(function(x){ return x.unit_id === u.id && x.charge_id === ct.id; })[0];
+  return r || { enabled: ct.method !== 'off', method: null, amount: null, has_meter: false, meter_no: null, _new: true };
+}
+function chargeEst(D, u, ct, row, T){
+  var cur = D.centre.currency, vat = ct.vat ? ' + VAT' : '';
+  if (!row.enabled) return 'Off for this shop';
+  var m = row.method || ct.method, area = +u.area_m2 || 0;
+  function share(){ return T.basis > 0 && area > 0 ? (Math.round(area / T.basis * 10000) / 100) + '% of the centre\'s bill each month' + vat : 'Share by area: fill in the m² first'; }
+  if (m === 'off') return 'Off';
+  if (m === 'fixed') return money(cur, row.amount != null ? +row.amount : +ct.rate) + ' a month' + vat;
+  if (m === 'per_m2') return area ? m2s(area) + ' × ' + money(cur, +ct.rate) + ' = ' + money(cur, area * ct.rate) + ' a month' + vat : 'Rate per m²: fill in the m² first';
+  if (m === 'share') return share();
+  if (m === 'metered') return row.has_meter
+    ? 'Meter ' + esc(row.meter_no || '') + ': units used × ' + money(cur, +ct.rate) + (+ct.basic ? ' + basic ' + money(cur, +ct.basic) : '') + vat
+    : 'No meter, so ' + share();
+  return '';
+}
+
+function ownerLeases(box, s, top){
+  box.innerHTML = '<div class="loading">Loading…</div>';
+  rpc('ctr_mgmt_home', { p_centre: CID, p_code: s.code }).then(function(D){
+    if (!D.ok) { box.innerHTML = '<div class="msg err">' + esc(D.msg) + '</div>'; return; }
+    var cur = D.centre.currency, today = D.today, T = mgmtTotals(D);
+    var roll = 0, ending = 0, past = 0, incr = 0, empty = 0, att = [];
+    D.units.forEach(function(u){
+      var l = T.leaseOf[u.id];
+      if (u.vacant || !l) { empty++; att.push({ u: u, dot: 'grey', t: esc(u.name) + ' is empty' + (u.area_m2 ? ' (' + m2s(u.area_m2) + ')' : '') }); return; }
+      var c = leaseCalc(l, u, today); if (c.state !== 'starts') roll += c.rent;
+      if (c.state === 'past') { past++; att.push({ u: u, dot: 'red', t: esc(u.name) + ': lease ended ' + niceY(l.end_on) + ', still trading (no new lease)' }); }
+      else if (c.state === 'ending') { ending++; att.push({ u: u, dot: 'amber', t: esc(u.name) + ': lease ends ' + niceY(l.end_on) + ' (' + c.toEnd + ' days)' }); }
+      if (c.toNext != null && c.toNext <= 60 && c.state !== 'past') { incr++; att.push({ u: u, dot: 'amber', t: esc(u.name) + ': rent goes up ' + (+l.increase_pct) + '% on ' + niceY(c.next) + ' to ' + money(cur, c.nextRent) }); }
+      if (!u.area_m2) att.push({ u: u, dot: 'grey', t: esc(u.name) + ': m² not filled in' });
+    });
+    var occ = T.all ? Math.round(T.let_ / T.all * 100) : 0;
+    var html = top +
+      '<div class="tiles">' +
+        '<div class="tile"><div class="k">Rent roll</div><div class="v">' + money(cur, roll) + '</div><div class="s">a month, excl. VAT</div></div>' +
+        '<div class="tile"><div class="k">Let</div><div class="v">' + occ + '%</div><div class="s">' + m2s(T.let_) + ' of ' + m2s(T.all) + '</div></div>' +
+        '<div class="tile"><div class="k">Ending in 90 days</div><div class="v">' + ending + '</div><div class="s">' + past + ' past their end</div></div>' +
+        '<div class="tile"><div class="k">Rent increases</div><div class="v">' + incr + '</div><div class="s">in the next 60 days</div></div>' +
+      '</div>' +
+      '<div class="h3">Needs attention</div><div class="box">' +
+        (att.length ? att.map(function(a){ return '<div class="att" data-open="' + a.u.id + '"><span class="dot ' + a.dot + '"></span><span>' + a.t + '</span></div>'; }).join('')
+                    : '<div class="empty">Nothing needs attention.</div>') + '</div>' +
+      '<div class="h3">Rent roll · ' + D.units.length + ' units' + (empty ? ' · ' + empty + ' empty' : '') + '</div>' +
+      D.units.map(function(u){
+        var l = T.leaseOf[u.id], c = l && !u.vacant ? leaseCalc(l, u, today) : null;
+        return '<div class="item rr" data-u="' + u.id + '"><div class="top" data-open="' + u.id + '"><div>' +
+          '<div class="ti">' + esc(u.name) + '</div>' +
+          '<div class="mt">' + (c ? esc(l.tenant_name) : 'Empty') + ' · ' + m2s(u.area_m2) + (u.location ? ' · ' + esc(u.location) : '') + '</div>' +
+          (c ? '<div class="mt">' + niceY(l.start_on) + ' to ' + (l.end_on ? niceY(l.end_on) : 'no end date') + '</div>' : '') +
+          '</div><div style="text-align:right">' + (c ? '<div class="amt">' + money(cur, c.rent) + '</div>' + leasePill(c, l) : '<span class="st empty">Empty</span>') +
+          '</div></div>' + (MGMT_OPEN === u.id ? unitCard(D, u, l, T) : '') + '</div>';
+      }).join('') +
+      '<div class="btns" style="margin-top:14px"><div class="b" id="addUnit">Add an empty unit</div><div class="b" id="csv">Export to Excel</div></div>' +
+      '<div id="addUnitSlot"></div>' +
+      '<div class="b wide" id="out">Log out</div>';
+    box.innerHTML = html;
+    if (MGMT_OPEN) { var open = box.querySelector('[data-u="' + MGMT_OPEN + '"]'); if (open) { wireUnitCard(D, open, s, T); } }
+    box.onclick = function(e){
+      var t;
+      if ((t = e.target.closest('[data-open]'))) {
+        var id = Number(t.getAttribute('data-open'));
+        MGMT_OPEN = (MGMT_OPEN === id ? null : id); ownerLeases(box, s, top);
+        if (MGMT_OPEN) setTimeout(function(){ var el = box.querySelector('[data-u="' + id + '"]'); if (el) el.scrollIntoView({ block: 'start' }); }, 30);
+      } else if (e.target.id === 'addUnit') {
+        $('addUnitSlot').innerHTML = '<div class="box" style="margin-top:10px"><div style="font-weight:700">Add an empty unit</div>' +
+          '<div class="hint">It is not on the door until a lease is added.</div>' +
+          '<label>Unit name</label><input id="nuName" maxlength="60" placeholder="e.g. Shop 10">' +
+          '<div class="two"><div><label>Where</label><input id="nuLoc" maxlength="40" placeholder="e.g. First floor"></div>' +
+          '<div><label>Size (m²)</label><input id="nuArea" inputmode="decimal"></div></div>' +
+          '<div class="btns"><div class="b sm main" id="nuSave">Add</div><div class="b sm" id="nuCancel">Cancel</div></div><div class="msg" id="nuMsg"></div></div>';
+        $('nuCancel').onclick = function(ev){ ev.stopPropagation(); $('addUnitSlot').innerHTML = ''; };
+        $('nuSave').onclick = function(ev){ ev.stopPropagation();
+          var a = toNum($('nuArea').value);
+          if (a != null && isNaN(a)) { $('nuMsg').className = 'msg err'; $('nuMsg').textContent = 'The size must be a number.'; return; }
+          rpc('ctr_space_save', { p_centre: CID, p_code: s.code, p_unit: null, p_name: $('nuName').value, p_location: $('nuLoc').value, p_area: a }).then(function(x){
+            if (!x.ok) { $('nuMsg').className = 'msg err'; $('nuMsg').textContent = x.msg; return; }
+            MGMT_OPEN = x.id; pageOwner('Empty unit added. Add its lease when a tenant signs.');
+          });
+        };
+      } else if (e.target.id === 'csv') { rentRollCsv(D, T);
+      } else if (e.target.id === 'out') { setSess(null); bar(); go('#'); }
+    };
+  });
+}
+
+function unitCard(D, u, l, T){
+  var cur = D.centre.currency, vac = u.vacant || !l, L = l || {};
+  var f = function(k){ return esc(L[k] == null ? '' : L[k]); };
+  return '<div class="box" style="margin-top:10px;cursor:default" data-card>' +
+    '<div class="sub" style="margin-top:0">The space</div>' +
+    (vac ? '<label>Unit name</label><input data-s="name" maxlength="60" value="' + esc(u.name) + '">' : '') +
+    '<div class="two"><div><label>Where</label><input data-s="location" maxlength="40" value="' + esc(u.location) + '"></div>' +
+    '<div><label>Size (m²)</label><input data-s="area" inputmode="decimal" value="' + esc(numStr(u.area_m2)) + '"></div></div>' +
+    '<div class="sub">' + (vac ? 'New lease' : 'The lease') + '</div>' +
+    (vac ? '<div class="hint">Saving a lease puts the shop on the door and gives it a shop code.</div>' +
+           '<label>Shop name on the door</label><input data-l="shop_name" maxlength="60" placeholder="e.g. Book Nook">' +
+           '<label>Kind</label><select data-l="category">' + CATS.map(function(k){ return '<option>' + esc(k) + '</option>'; }).join('') + '</select>' : '') +
+    '<label>Tenant (the company that signs)</label><input data-l="tenant_name" maxlength="100" value="' + f('tenant_name') + '" placeholder="e.g. Book Nook (Pty) Ltd">' +
+    '<div class="two"><div><label>Contact person</label><input data-l="contact" maxlength="80" value="' + f('contact') + '"></div>' +
+    '<div><label>Phone</label><input data-l="phone" maxlength="40" value="' + f('phone') + '"></div></div>' +
+    '<div class="two"><div><label>Email</label><input data-l="email" maxlength="120" value="' + f('email') + '"></div>' +
+    '<div><label>Tenant\'s VAT no.</label><input data-l="vat_no" maxlength="30" value="' + f('vat_no') + '"></div></div>' +
+    '<div class="two"><div><label>Start</label><input data-l="start_on" type="date" value="' + f('start_on') + '"></div>' +
+    '<div><label>End</label><input data-l="end_on" type="date" value="' + f('end_on') + '"></div></div>' +
+    '<div class="two"><div><label>Rent is</label><select data-l="rent_basis"><option value="month"' + (L.rent_basis !== 'm2' ? ' selected' : '') + '>a month</option>' +
+      '<option value="m2"' + (L.rent_basis === 'm2' ? ' selected' : '') + '>per m²</option></select></div>' +
+    '<div><label>Rent at the start (' + cur + ', excl. VAT)</label><input data-l="rent_value" inputmode="decimal" value="' + esc(numStr(L.rent_value)) + '"></div></div>' +
+    '<div class="two"><div><label>Yearly increase (%)</label><input data-l="increase_pct" inputmode="decimal" value="' + esc(numStr(L.increase_pct)) + '"></div>' +
+    '<div><label>Deposit (' + cur + ')</label><input data-l="deposit" inputmode="decimal" value="' + esc(numStr(L.deposit)) + '"></div></div>' +
+    '<label>Deposit held as</label><select data-l="deposit_kind">' + ['Cash','Bank guarantee','None'].map(function(k){
+      return '<option' + (L.deposit_kind === k ? ' selected' : '') + '>' + k + '</option>'; }).join('') + '</select>' +
+    '<label>Notes</label><textarea data-l="notes" maxlength="500">' + f('notes') + '</textarea>' +
+    '<div class="hint" data-calc></div>' +
+    '<div class="btns"><div class="b sm main" data-save>Save</div><div class="b sm" data-close>Close</div>' +
+      (!vac ? '<div class="b sm no" data-leave>Tenant leaves</div>' : '') + '</div>' +
+    '<div class="slot"></div><div class="msg" data-m></div>' +
+    '<div class="sub">Charges for this shop</div><div class="hint">Each charge uses the centre\'s way unless you change it here.</div>' +
+    D.charges.map(function(ct){
+      var r = chargeRow(D, u, ct), m = r.method || '';
+      return '<div class="crow" data-ch="' + ct.id + '"><div class="hd"><span class="nm">' + esc(ct.name) + '</span>' +
+        '<label class="chk"><input type="checkbox" data-c="enabled"' + (r.enabled ? ' checked' : '') + '> Charged</label></div>' +
+        '<select data-c="method"><option value="">Centre\'s way: ' + esc(METHODS[ct.method]) + '</option>' +
+          Object.keys(METHODS).map(function(k){ return '<option value="' + k + '"' + (m === k ? ' selected' : '') + '>' + esc(METHODS[k]) + '</option>'; }).join('') + '</select>' +
+        '<input type="text" data-c="amount" inputmode="decimal" placeholder="This shop\'s amount (' + cur + ' a month)" value="' + esc(numStr(r.amount)) + '">' +
+        '<label class="chk" data-meterbox style="margin-top:8px"><input type="checkbox" data-c="has_meter"' + (r.has_meter ? ' checked' : '') + '> Has its own meter</label>' +
+        '<input type="text" data-c="meter_no" maxlength="40" placeholder="Meter number" value="' + esc(r.meter_no || '') + '">' +
+        '<div class="est"></div></div>';
+    }).join('') +
+    '<div class="btns"><div class="b sm main" data-csave>Save charges</div></div><div class="msg" data-cm></div>' +
+  '</div>';
+}
+
+function wireUnitCard(D, wrap, s, T){
+  var card = wrap.querySelector('[data-card]'), u = D.units.filter(function(x){ return x.id === MGMT_OPEN; })[0];
+  var l = T.leaseOf[u.id], cur = D.centre.currency;
+  card.onclick = function(e){ e.stopPropagation(); };
+  function val(sel){ var el = card.querySelector(sel); return el ? el.value : ''; }
+  function showCalc(){
+    var area = toNum(val('[data-s=area]')), L = { rent_basis: val('[data-l=rent_basis]'), rent_value: toNum(val('[data-l=rent_value]')),
+      increase_pct: toNum(val('[data-l=increase_pct]')) || 0, start_on: val('[data-l=start_on]'), end_on: val('[data-l=end_on]') };
+    var el = card.querySelector('[data-calc]');
+    if (!L.start_on || L.rent_value == null || isNaN(L.rent_value)) { el.textContent = ''; return; }
+    var c = leaseCalc(L, { area_m2: area }, D.today);
+    el.textContent = 'Rent now: ' + money(cur, c.rent) + ' a month excl. VAT' + (c.next ? ' · next increase ' + niceY(c.next) + ' to ' + money(cur, c.nextRent) : '');
+  }
+  card.querySelectorAll('[data-l],[data-s]').forEach(function(el){ el.oninput = showCalc; el.onchange = showCalc; });
+  showCalc();
+  // charges: show the right boxes and the estimate as things change
+  function paintRow(row){
+    var ct = D.charges.filter(function(c){ return c.id === Number(row.getAttribute('data-ch')); })[0];
+    var r = { enabled: row.querySelector('[data-c=enabled]').checked, method: row.querySelector('[data-c=method]').value || null,
+              amount: toNum(row.querySelector('[data-c=amount]').value), has_meter: row.querySelector('[data-c=has_meter]').checked,
+              meter_no: row.querySelector('[data-c=meter_no]').value };
+    var m = r.method || ct.method;
+    row.querySelector('[data-c=method]').style.display = r.enabled ? '' : 'none';
+    row.querySelector('[data-c=amount]').style.display = r.enabled && m === 'fixed' ? '' : 'none';
+    row.querySelector('[data-meterbox]').style.display = r.enabled && m === 'metered' ? '' : 'none';
+    row.querySelector('[data-c=meter_no]').style.display = r.enabled && m === 'metered' && r.has_meter ? '' : 'none';
+    var uu = { id: u.id, area_m2: toNum(val('[data-s=area]')) };
+    row.querySelector('.est').innerHTML = chargeEst(D, uu, ct, r, T);
+    return { ct: ct, r: r };
+  }
+  card.querySelectorAll('.crow').forEach(function(row){
+    row.querySelectorAll('[data-c]').forEach(function(el){ el.onchange = function(){ paintRow(row); }; el.oninput = el.onchange; });
+    paintRow(row);
+  });
+  card.querySelector('[data-close]').onclick = function(){ MGMT_OPEN = null; pageOwner(); };
+  card.querySelector('[data-save]').onclick = function(){
+    var m = card.querySelector('[data-m]'); m.className = 'msg'; m.textContent = 'Saving…';
+    var area = toNum(val('[data-s=area]'));
+    if (area != null && isNaN(area)) { m.className = 'msg err'; m.textContent = 'The size must be a number.'; return; }
+    var L = {}; card.querySelectorAll('[data-l]').forEach(function(el){ L[el.getAttribute('data-l')] = el.value; });
+    rpc('ctr_space_save', { p_centre: CID, p_code: s.code, p_unit: u.id, p_name: val('[data-s=name]'), p_location: val('[data-s=location]'), p_area: area }).then(function(x){
+      if (!x.ok) { m.className = 'msg err'; m.textContent = x.msg; return; }
+      if ((u.vacant || !l) && !L.tenant_name.trim()) { pageOwner('Unit saved.'); return; }
+      rpc('ctr_lease_save', { p_centre: CID, p_code: s.code, p_unit: u.id, p_lease: L }).then(function(y){
+        if (!y.ok) { m.className = 'msg err'; m.textContent = y.msg; return; }
+        pageOwner(y.code ? 'Lease saved. ' + L.shop_name + ' is on the door; its shop code is ' + y.code + '.' : 'Lease saved.');
+      });
+    });
+  };
+  var leave = card.querySelector('[data-leave]');
+  if (leave) leave.onclick = function(){
+    var slot = card.querySelector('.slot');
+    slot.innerHTML = '<div class="ask">' + esc(u.name) + ' leaves. The lease is closed, the shop goes off the door and its code stops working.' +
+      '<label style="color:inherit">Last day</label><input type="date" data-end value="' + D.today + '">' +
+      '<div class="btns"><div class="b sm no" data-y>Yes, close the lease</div><div class="b sm" data-n>No</div></div><div class="msg" data-mm></div></div>';
+    slot.querySelector('[data-n]').onclick = function(){ slot.innerHTML = ''; };
+    slot.querySelector('[data-y]').onclick = function(){
+      rpc('ctr_lease_end', { p_centre: CID, p_code: s.code, p_lease: l.id, p_ended_on: slot.querySelector('[data-end]').value || null }).then(function(x){
+        if (!x.ok) { var mm = slot.querySelector('[data-mm]'); mm.className = 'msg err'; mm.textContent = x.msg; return; }
+        pageOwner('Lease closed. ' + u.name + ' is now an empty unit.');
+      });
+    };
+  };
+  card.querySelector('[data-csave]').onclick = function(){
+    var cm = card.querySelector('[data-cm]'), jobs = [];
+    var rows = Array.prototype.slice.call(card.querySelectorAll('.crow'));
+    for (var i = 0; i < rows.length; i++) {
+      var p = paintRow(rows[i]), old = chargeRow(D, u, p.ct), r = p.r;
+      if (r.amount != null && isNaN(r.amount)) { cm.className = 'msg err'; cm.textContent = p.ct.name + ': the amount must be a number.'; return; }
+      var same = !!old.enabled === r.enabled && (old.method || null) === r.method && (old.amount == null ? null : +old.amount) === r.amount &&
+                 !!old.has_meter === r.has_meter && (old.meter_no || '') === r.meter_no;
+      if (!same) jobs.push({ p_centre: CID, p_code: s.code, p_unit: u.id, p_charge: p.ct.id, p_enabled: r.enabled, p_method: r.method,
+                             p_amount: r.amount, p_has_meter: r.has_meter, p_meter_no: r.meter_no });
+    }
+    if (!jobs.length) { cm.className = 'msg ok'; cm.textContent = 'Nothing changed.'; return; }
+    cm.className = 'msg'; cm.textContent = 'Saving…';
+    (function next(i){
+      if (i >= jobs.length) { pageOwner('Charges saved for ' + u.name + '.'); return; }
+      rpc('ctr_unit_charge_save', jobs[i]).then(function(x){
+        if (!x.ok) { cm.className = 'msg err'; cm.textContent = x.msg; return; }
+        next(i + 1);
+      });
+    })(0);
+  };
+}
+
+function rentRollCsv(D, T){
+  var cur = D.centre.currency, today = D.today;
+  var q = function(v){ v = v == null ? '' : String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+  var rows = [['Unit','Where','m2','Tenant','Contact','Phone','Start','End','Rent basis','Rent at start','Rent now (' + cur + ' excl VAT)',
+               'Yearly increase %','Next increase','Rent after next increase','Deposit','Deposit held as','State']];
+  D.units.forEach(function(u){
+    var l = T.leaseOf[u.id];
+    if (u.vacant || !l) { rows.push([u.name, u.location, u.area_m2, '', '', '', '', '', '', '', '', '', '', '', '', '', 'Empty']); return; }
+    var c = leaseCalc(l, u, today);
+    rows.push([u.name, u.location, u.area_m2, l.tenant_name, l.contact, l.phone, l.start_on, l.end_on, l.rent_basis === 'm2' ? 'per m2' : 'per month',
+               (+l.rent_value).toFixed(2), c.rent.toFixed(2), +l.increase_pct, c.next || '', c.next ? c.nextRent.toFixed(2) : '', (+l.deposit).toFixed(2), l.deposit_kind,
+               { past: 'Past its end', ending: 'Ends in ' + c.toEnd + ' days', starts: 'Not started', running: 'Running' }[c.state]]);
+  });
+  var csv = '﻿' + rows.map(function(r){ return r.map(q).join(','); }).join('\r\n');
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  a.download = 'Rent roll ' + D.centre.name.replace(/[\\/:*?"<>|]+/g, '-') + ' ' + today + '.csv';
+  document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+
+function ownerCharges(box, s, top){
+  box.innerHTML = '<div class="loading">Loading…</div>';
+  rpc('ctr_mgmt_home', { p_centre: CID, p_code: s.code }).then(function(D){
+    if (!D.ok) { box.innerHTML = '<div class="msg err">' + esc(D.msg) + '</div>'; return; }
+    var c = D.centre, cur = c.currency, T = mgmtTotals(D);
+    function rateText(ct){
+      if (ct.method === 'fixed') return money(cur, +ct.rate) + ' a month per shop (default)';
+      if (ct.method === 'per_m2') return money(cur, +ct.rate) + ' per m² a month';
+      if (ct.method === 'share') return 'each shop pays its share of the centre\'s bill';
+      if (ct.method === 'metered') return money(cur, +ct.rate) + ' per unit used' + (+ct.basic ? ' + basic ' + money(cur, +ct.basic) : '') + '; no meter = share by area';
+      return 'not charged';
+    }
+    box.innerHTML = top +
+      '<div class="box"><div style="font-weight:700">Settings</div>' +
+        '<div class="two"><div><label>Currency</label><select id="stCur"><option value="E"' + (cur === 'E' ? ' selected' : '') + '>E (Lilangeni)</option>' +
+          '<option value="R"' + (cur === 'R' ? ' selected' : '') + '>R (Rand)</option></select></div>' +
+        '<div><label>Centre\'s VAT no.</label><input id="stVat" maxlength="30" value="' + esc(c.vat_no || '') + '"></div></div>' +
+        '<label>Share by area is worked out on</label><select id="stShare">' +
+          '<option value="all"' + (c.share_basis !== 'let' ? ' selected' : '') + '>The whole centre\'s m² (the owner carries the empty units)</option>' +
+          '<option value="let"' + (c.share_basis === 'let' ? ' selected' : '') + '>Let m² only (the tenants carry the empty units)</option></select>' +
+        '<div class="hint">Whole centre: ' + m2s(T.all) + ' · let: ' + m2s(T.let_) + '. VAT is 15%.</div>' +
+        '<div class="b main wide" id="stSave">Save settings</div><div class="msg" id="stMsg"></div></div>' +
+      '<div class="h3">The centre\'s charges</div><div class="hint">These are the choices on every shop\'s charges. Rent is on each lease.</div>' +
+      D.charges.map(function(ct){
+        return '<div class="item" data-ct="' + ct.id + '"><div class="top" style="display:flex;justify-content:space-between;gap:8px">' +
+          '<div class="ti">' + esc(ct.name) + '</div><span class="st ' + (ct.method === 'off' ? 'ended' : 'approved') + '">' + esc(METHODS[ct.method]) + '</span></div>' +
+          '<div class="mt">' + rateText(ct) + (ct.vat ? ' · plus VAT' : ' · no VAT') + '</div>' +
+          '<div class="btns"><div class="b sm" data-ed="' + ct.id + '">Change</div><div class="b sm no" data-del="' + ct.id + '">Remove</div></div><div class="slot"></div></div>';
+      }).join('') +
+      '<div class="b main wide" id="ctAdd">Add a charge</div><div id="ctAddSlot"></div>' +
+      '<div class="b wide" id="out">Log out</div>';
+    $('stSave').onclick = function(){
+      var m = $('stMsg'); m.className = 'msg'; m.textContent = 'Saving…';
+      rpc('ctr_settings_save', { p_centre: CID, p_code: s.code, p_currency: $('stCur').value, p_share_basis: $('stShare').value, p_vat_no: $('stVat').value }).then(function(x){
+        if (!x.ok) { m.className = 'msg err'; m.textContent = x.msg; return; }
+        pageOwner('Settings saved.');
+      });
+    };
+    function form(ct){
+      ct = ct || { name: '', method: 'fixed', rate: 0, basic: 0, vat: true, sort: 100 + D.charges.length * 10 };
+      return '<div class="box" style="margin-top:10px" data-form="' + (ct.id || '') + '">' +
+        '<label>Name</label><input data-f="name" maxlength="40" value="' + esc(ct.name) + '" placeholder="e.g. Air conditioning">' +
+        '<label>How it is worked out</label><select data-f="method">' + Object.keys(METHODS).map(function(k){
+          return '<option value="' + k + '"' + (ct.method === k ? ' selected' : '') + '>' + esc(METHODS[k]) + '</option>'; }).join('') + '</select>' +
+        '<div data-rate><label data-ratelabel></label><input data-f="rate" inputmode="decimal" value="' + esc(numStr(ct.rate)) + '"></div>' +
+        '<div data-basic><label>Basic charge a month (' + cur + ')</label><input data-f="basic" inputmode="decimal" value="' + esc(numStr(ct.basic)) + '"></div>' +
+        '<div class="hint" data-how></div>' +
+        '<label class="chk" style="margin-top:12px"><input type="checkbox" data-f="vat"' + (ct.vat ? ' checked' : '') + '> Add VAT (15%)</label>' +
+        '<div class="two"><div><label>Place in the list</label><input data-f="sort" inputmode="numeric" value="' + esc(ct.sort) + '"></div><div></div></div>' +
+        '<div class="btns"><div class="b sm main" data-fsave>Save</div><div class="b sm" data-fcancel>Cancel</div></div><div class="msg" data-fm></div></div>';
+    }
+    function wire(holder){
+      var f = holder.querySelector('[data-form]');
+      function paint(){
+        var m = f.querySelector('[data-f=method]').value;
+        f.querySelector('[data-rate]').style.display = (m === 'fixed' || m === 'per_m2' || m === 'metered') ? '' : 'none';
+        f.querySelector('[data-basic]').style.display = m === 'metered' ? '' : 'none';
+        f.querySelector('[data-ratelabel]').textContent = m === 'fixed' ? 'Default amount per shop a month (' + cur + ')' :
+          m === 'per_m2' ? 'Rate per m² a month (' + cur + ')' : 'Tariff per unit used, e.g. per kWh or kl (' + cur + ')';
+        f.querySelector('[data-how]').textContent = {
+          fixed: 'The same amount each month. A shop can have its own amount.',
+          per_m2: 'Each shop pays its m² × this rate.',
+          share: 'Each month you enter the centre\'s bill; each shop pays its share by m².',
+          metered: 'Shops with a meter pay units used × tariff (+ basic). Shops without a meter pay a share by m².',
+          off: 'Not charged.' }[m];
+      }
+      f.querySelector('[data-f=method]').onchange = paint; paint();
+      f.querySelector('[data-fcancel]').onclick = function(ev){ ev.stopPropagation(); holder.innerHTML = ''; };
+      f.querySelector('[data-fsave]').onclick = function(ev){ ev.stopPropagation();
+        var g = function(k){ return f.querySelector('[data-f=' + k + ']'); }, m = f.querySelector('[data-fm]');
+        var rate = toNum(g('rate').value) || 0, basic = toNum(g('basic').value) || 0;
+        if (isNaN(rate) || isNaN(basic)) { m.className = 'msg err'; m.textContent = 'Amounts must be numbers.'; return; }
+        var id = f.getAttribute('data-form');
+        rpc('ctr_charge_save', { p_centre: CID, p_code: s.code, p_id: id ? Number(id) : null, p_name: g('name').value, p_method: g('method').value,
+            p_rate: rate, p_basic: basic, p_vat: g('vat').checked, p_sort: parseInt(g('sort').value, 10) || 100 }).then(function(x){
+          if (!x.ok) { m.className = 'msg err'; m.textContent = x.msg; return; }
+          pageOwner(id ? 'Charge saved.' : 'Charge added. Every shop now has it in its charges.');
+        });
+      };
+    }
+    box.onclick = function(e){
+      var t;
+      if (e.target.id === 'ctAdd') { $('ctAddSlot').innerHTML = form(null); wire($('ctAddSlot')); }
+      else if ((t = e.target.closest('[data-ed]'))) {
+        var ct = D.charges.filter(function(x){ return x.id === Number(t.getAttribute('data-ed')); })[0], sl = t.closest('.item').querySelector('.slot');
+        sl.innerHTML = form(ct); wire(sl);
+      } else if ((t = e.target.closest('[data-del]'))) {
+        var did = Number(t.getAttribute('data-del')), nm = D.charges.filter(function(x){ return x.id === did; })[0].name;
+        askIn(t.closest('.item').querySelector('.slot'), 'Remove ' + nm + ' from the centre\'s charges? No shop will be charged for it.', 'Yes, remove', function(){
+          return rpc('ctr_charge_remove', { p_centre: CID, p_code: s.code, p_id: did }).then(function(x){ if (x.ok) pageOwner(nm + ' removed.'); return x; });
+        });
+      } else if (e.target.id === 'out') { setSess(null); bar(); go('#'); }
+    };
+  });
+}
+
+// =====================================================================
+// e3 · BILLING RUN, INVOICES, STATEMENTS, PAYMENTS, PDFs
+// =====================================================================
+var MONTHS_LONG = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+function monthName(p){ var d = ymd(p); return MONTHS_LONG[d.getUTCMonth()] + ' ' + d.getUTCFullYear(); }
+function monthStart(s){ return String(s).slice(0,7) + '-01'; }
+function addMonths(p, n){ var d = ymd(p); d.setUTCDate(1); d.setUTCMonth(d.getUTCMonth() + n); return d.toISOString().slice(0,10); }
+function monthEnd(p){ return addDays(addMonths(p, 1), -1); }
+function r2(n){ return Math.round((+n + Number.EPSILON) * 100) / 100; }
+
+// the tenant's account: invoices (debits) and payments (credits) in date order, running balance,
+// and what is still unpaid by age (payments clear the oldest invoice first)
+function ledger(invoices, payments, today){
+  var rows = [];
+  invoices.forEach(function(i){ rows.push({ date: i.inv_date, kind: 'inv', ref: i.number, desc: i.status === 'void' ? 'Invoice (cancelled: ' + (i.void_reason || '') + ')' : 'Invoice ' + monthName(i.period),
+                                            debit: i.status === 'void' ? 0 : +i.total, credit: 0, inv: i }); });
+  payments.forEach(function(p){ rows.push({ date: p.paid_on, kind: 'pay', ref: p.reference || '', desc: 'Payment received', debit: 0, credit: +p.amount, pay: p }); });
+  rows.sort(function(a, b){ return a.date < b.date ? -1 : a.date > b.date ? 1 : (a.kind === 'inv' ? -1 : 1); });
+  var bal = 0; rows.forEach(function(r){ bal = r2(bal + r.debit - r.credit); r.balance = bal; });
+  var paid = payments.reduce(function(s, p){ return s + +p.amount; }, 0);
+  var age = { cur: 0, d30: 0, d60: 0, d90: 0 };
+  invoices.filter(function(i){ return i.status === 'sent'; }).sort(function(a, b){ return a.inv_date < b.inv_date ? -1 : 1; }).forEach(function(i){
+    var left = +i.total, take = Math.min(paid, left); paid -= take; left = r2(left - take);
+    if (left <= 0) return;
+    var d = daysTo(i.inv_date, today);
+    if (d >= 90) age.d90 += left; else if (d >= 60) age.d60 += left; else if (d >= 30) age.d30 += left; else age.cur += left;
+  });
+  Object.keys(age).forEach(function(k){ age[k] = r2(age[k]); });
+  return { rows: rows, balance: bal, age: age };
+}
+
+// ---------- PDFs (jsPDF, built on the phone, like the FeeApp) ----------
+var PDF = { W: 210, M: 16, grey: [107, 114, 128], ink: [17, 24, 39], brand: [20, 50, 92] };
+var pdfReady = null;
+function loadPdf(){
+  if (window.jspdf && window.jspdf.jsPDF && window.jspdf.jsPDF.API.autoTable) return Promise.resolve(true);
+  if (pdfReady) return pdfReady;
+  function add(src){ return new Promise(function(ok, no){ var s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = no; document.head.appendChild(s); }); }
+  pdfReady = add('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js')
+    .then(function(){ return add('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js'); })
+    .then(function(){ return true; }, function(){ pdfReady = null; return false; });
+  return pdfReady;
+}
+function pdfText(s){ return String(s == null ? '' : s).replace(/→/g, 'to').replace(/[‘’]/g, "'").replace(/[“”]/g, '"'); }
+function pdfHeader(doc, lh){
+  var W = PDF.W, M = PDF.M, y = M;
+  doc.setFont('helvetica', 'bold').setFontSize(14).setTextColor.apply(doc, PDF.ink); doc.text(pdfText(lh.legal_name || lh.name), M, y + 5);
+  doc.setFont('helvetica', 'normal').setFontSize(8.5).setTextColor.apply(doc, PDF.grey);
+  var lines = [lh.legal_name ? lh.name : '', lh.address, [lh.phone, lh.email].filter(Boolean).join(' · '),
+               lh.vat_registered && lh.vat_no ? 'VAT registration no. ' + lh.vat_no : ''].filter(Boolean);
+  lines.forEach(function(t, i){ doc.text(pdfText(t), M, y + 10 + i * 4); });
+  y += 12 + lines.length * 4;
+  doc.setDrawColor.apply(doc, PDF.brand); doc.setLineWidth(0.8); doc.line(M, y, W - M, y);
+  return y + 8;
+}
+function pdfFooter(doc, label){
+  var n = doc.getNumberOfPages();
+  for (var i = 1; i <= n; i++) { doc.setPage(i); doc.setFont('helvetica', 'normal').setFontSize(7.5).setTextColor.apply(doc, PDF.grey);
+    doc.text(pdfText(label), PDF.M, 290); doc.text('Page ' + i + ' of ' + n, PDF.W - PDF.M, 290, { align: 'right' }); }
+}
+function pdfBlock(doc, y, title, text){
+  if (!text) return y;
+  var CW = PDF.W - 2 * PDF.M;
+  if (y > 255) { doc.addPage(); y = PDF.M; }
+  doc.setFont('helvetica', 'bold').setFontSize(8.5).setTextColor.apply(doc, PDF.grey); doc.text(title, PDF.M, y); y += 4.5;
+  var lines = doc.splitTextToSize(pdfText(text), CW);
+  doc.setFont('helvetica', 'normal').setFontSize(9.5).setTextColor.apply(doc, PDF.ink); doc.text(lines, PDF.M, y);
+  return y + lines.length * 4.3 + 6;
+}
+function pdfRight(doc, label, val, yy){
+  doc.setFont('helvetica', 'normal').setFontSize(9).setTextColor.apply(doc, PDF.grey); doc.text(label, PDF.W - PDF.M - 62, yy);
+  doc.setFont('helvetica', 'bold').setTextColor.apply(doc, PDF.ink); doc.text(pdfText(val), PDF.W - PDF.M, yy, { align: 'right' });
+}
+var PDF_TABLE = { theme: 'plain', styles: { font: 'helvetica', fontSize: 9.5, textColor: PDF.ink, cellPadding: { top: 2, bottom: 2, left: 0, right: 1 },
+                  lineColor: [229, 231, 235], lineWidth: { bottom: 0.2 } },
+                  headStyles: { textColor: PDF.grey, fontSize: 8, fontStyle: 'bold', fillColor: false, lineWidth: { bottom: 0.4 }, lineColor: PDF.ink } };
+function invoiceFileName(inv, lh){ return ((lh.vat_registered ? 'Tax invoice ' : 'Invoice ') + (inv.number || 'draft') + ' - ' + inv.tenant_name).replace(/[\\/:*?"<>|]+/g, '-') + '.pdf'; }
+
+function buildInvoicePdf(inv, lh){
+  var jsPDF = window.jspdf.jsPDF, doc = new jsPDF({ unit: 'mm', format: 'a4' }), M = PDF.M, W = PDF.W, CW = W - 2 * M, cur = lh.currency;
+  var isTax = !!lh.vat_registered, y = pdfHeader(doc, lh);
+  doc.setFont('helvetica', 'bold').setFontSize(16).setTextColor.apply(doc, PDF.ink); doc.text(isTax ? 'TAX INVOICE' : 'INVOICE', M, y + 1);
+  if (inv.status === 'draft') { doc.setTextColor(180, 83, 9); doc.setFontSize(11); doc.text('DRAFT - not sent', M, y + 7); }
+  if (inv.status === 'void') { doc.setTextColor(163, 36, 27); doc.setFontSize(11); doc.text('CANCELLED: ' + pdfText(inv.void_reason || ''), M, y + 7); }
+  pdfRight(doc, 'Invoice number', inv.number || 'draft', y);
+  pdfRight(doc, 'Date', inv.inv_date ? niceY(inv.inv_date) : '-', y + 5);
+  pdfRight(doc, 'Period', monthName(inv.period), y + 10);
+  y += 20;
+  doc.setFont('helvetica', 'bold').setFontSize(8.5).setTextColor.apply(doc, PDF.grey); doc.text('INVOICE TO', M, y); y += 5;
+  doc.setFont('helvetica', 'normal').setFontSize(10.5).setTextColor.apply(doc, PDF.ink); doc.text(pdfText(inv.tenant_name), M, y); y += 5;
+  doc.setFontSize(9).setTextColor.apply(doc, PDF.grey); doc.text(pdfText(inv.unit_name + ' · ' + (lh.name || '')), M, y); y += 4.5;
+  if (inv.tenant_vat_no) { doc.text('VAT no. ' + pdfText(inv.tenant_vat_no), M, y); y += 4.5; }
+  y += 4;
+  doc.autoTable(Object.assign({}, PDF_TABLE, { startY: y, margin: { left: M, right: M },
+    head: [['Description', 'Amount excl. VAT', 'VAT', 'Amount']],
+    body: inv.lines.map(function(l){ return [pdfText(l.description), money(cur, +l.amount), +l.vat_rate ? money(cur, +l.vat) : '-', money(cur, +l.amount + +l.vat)]; }),
+    columnStyles: { 0: { cellWidth: 'auto' }, 1: { halign: 'right', cellWidth: 32 }, 2: { halign: 'right', cellWidth: 24 }, 3: { halign: 'right', cellWidth: 32 } },
+    didParseCell: function(d){ if (d.section === 'head' && d.column.index > 0) d.cell.styles.halign = 'right'; } }));
+  y = doc.lastAutoTable.finalY + 2;
+  var tot = isTax ? [['Subtotal (excl. VAT)', money(cur, +inv.subtotal)], ['VAT at 15%', money(cur, +inv.vat)], ['TOTAL DUE', money(cur, +inv.total)]]
+                  : [['TOTAL DUE', money(cur, +inv.total)]];
+  doc.autoTable(Object.assign({}, PDF_TABLE, { startY: y, margin: { left: M + CW * 0.45, right: M }, body: tot,
+    columnStyles: { 0: { cellWidth: 'auto' }, 1: { halign: 'right', cellWidth: 42 } },
+    didParseCell: function(d){ if (d.row.index === tot.length - 1) { d.cell.styles.fontStyle = 'bold'; d.cell.styles.fontSize = 11.5; d.cell.styles.lineWidth = { top: 0.5, bottom: 0 }; d.cell.styles.lineColor = PDF.ink; } } }));
+  y = doc.lastAutoTable.finalY + 10;
+  y = pdfBlock(doc, y, 'PAYMENT TERMS', lh.terms);
+  y = pdfBlock(doc, y, 'BANKING DETAILS', lh.bank ? lh.bank + (inv.number ? '\nPayment reference: ' + inv.number : '') : '');
+  pdfFooter(doc, (lh.legal_name || lh.name) + ' · ' + (isTax ? 'Tax invoice ' : 'Invoice ') + (inv.number || 'draft'));
+  return doc;
+}
+
+function buildStatementPdf(lease, L, lh, today){
+  var jsPDF = window.jspdf.jsPDF, doc = new jsPDF({ unit: 'mm', format: 'a4' }), M = PDF.M, W = PDF.W, cur = lh.currency, y = pdfHeader(doc, lh);
+  doc.setFont('helvetica', 'bold').setFontSize(16).setTextColor.apply(doc, PDF.ink); doc.text('STATEMENT', M, y + 1);
+  pdfRight(doc, 'Date', niceY(today), y);
+  pdfRight(doc, 'Amount due', money(cur, Math.max(0, L.balance)), y + 5);
+  y += 14;
+  doc.setFont('helvetica', 'bold').setFontSize(8.5).setTextColor.apply(doc, PDF.grey); doc.text('STATEMENT FOR', M, y); y += 5;
+  doc.setFont('helvetica', 'normal').setFontSize(10.5).setTextColor.apply(doc, PDF.ink); doc.text(pdfText(lease.tenant_name), M, y); y += 5;
+  doc.setFontSize(9).setTextColor.apply(doc, PDF.grey); doc.text(pdfText(lease.unit + ' · ' + (lh.name || '')), M, y); y += 8;
+  doc.autoTable(Object.assign({}, PDF_TABLE, { startY: y, margin: { left: M, right: M },
+    head: [['Date', 'Reference', 'Description', 'Debit', 'Credit', 'Balance']],
+    body: L.rows.map(function(r){ return [niceY(r.date), pdfText(r.ref), pdfText(r.desc), r.debit ? money(cur, r.debit) : '', r.credit ? money(cur, r.credit) : '', money(cur, r.balance)]; }),
+    columnStyles: { 0: { cellWidth: 24 }, 1: { cellWidth: 24 }, 2: { cellWidth: 'auto' }, 3: { halign: 'right', cellWidth: 26 }, 4: { halign: 'right', cellWidth: 26 }, 5: { halign: 'right', cellWidth: 28 } },
+    didParseCell: function(d){ if (d.section === 'head' && d.column.index > 2) d.cell.styles.halign = 'right'; } }));
+  y = doc.lastAutoTable.finalY + 6;
+  doc.autoTable(Object.assign({}, PDF_TABLE, { startY: y, margin: { left: M, right: M },
+    head: [['Current', '30 days', '60 days', '90 days and over', 'Amount due']],
+    body: [[money(cur, L.age.cur), money(cur, L.age.d30), money(cur, L.age.d60), money(cur, L.age.d90), money(cur, Math.max(0, L.balance))]],
+    styles: Object.assign({}, PDF_TABLE.styles, { halign: 'right' }),
+    didParseCell: function(d){ d.cell.styles.halign = 'right'; if (d.section === 'body' && d.column.index === 4) d.cell.styles.fontStyle = 'bold'; } }));
+  y = doc.lastAutoTable.finalY + 10;
+  if (L.balance < 0) y = pdfBlock(doc, y, 'IN CREDIT', 'Your account is in credit by ' + money(cur, -L.balance) + '.');
+  y = pdfBlock(doc, y, 'PAYMENT TERMS', lh.terms);
+  y = pdfBlock(doc, y, 'BANKING DETAILS', lh.bank ? lh.bank + '\nPayment reference: ' + lease.unit : '');
+  pdfFooter(doc, (lh.legal_name || lh.name) + ' · Statement ' + lease.tenant_name + ' · ' + niceY(today));
+  return doc;
+}
+
+// share on the phone (WhatsApp, email…) or download, like the FeeApp
+function pdfOut(doc, name, title, how, msgEl){
+  function say(t, err){ if (msgEl) { msgEl.className = 'msg ' + (err ? 'err' : 'ok'); msgEl.textContent = t; } }
+  var file = null;
+  try { file = new File([doc.output('blob')], name, { type: 'application/pdf' }); } catch (e) {}
+  if (how === 'share' && file && navigator.canShare && navigator.canShare({ files: [file] })) {
+    return navigator.share({ files: [file], title: title, text: title }).then(function(){ say('Sent.'); }, function(e){ if (!e || e.name !== 'AbortError') { doc.save(name); say('PDF downloaded. Attach it to your email or message.'); } });
+  }
+  doc.save(name); say(how === 'share' ? 'PDF downloaded. Attach it to your email or message.' : 'PDF downloaded.');
+  return Promise.resolve();
+}
+function withPdf(msgEl, fn){
+  if (msgEl) { msgEl.className = 'msg'; msgEl.textContent = 'Preparing the PDF…'; }
+  return loadPdf().then(function(ok){
+    if (!ok) { if (msgEl) { msgEl.className = 'msg err'; msgEl.textContent = 'The PDF maker did not load. Check the connection and try again.'; } return; }
+    return fn();
+  });
+}
+
+// ---------- the month's invoices, worked out from leases + charges + this month's bills and readings ----------
+function computeRun(D, lh, period, inp){
+  var p0 = period, p1 = monthEnd(period), dim = daysTo(p0, p1) + 1, T = mgmtTotals(D), cur = lh.currency;
+  var vatOn = !!lh.vat_registered, out = [], warn = [], warned = {};
+  var bills = {}; (inp.bills || []).forEach(function(b){ if (b.amount != null && b.amount !== '') bills[b.charge_id] = +b.amount; });
+  var reads = {}; (inp.readings || []).forEach(function(r){ reads[r.unit_id + '_' + r.charge_id] = r; });
+  D.units.forEach(function(u){
+    var l = T.leaseOf[u.id];
+    if (u.vacant || !l || l.start_on > p1) return;
+    var from = l.start_on > p0 ? l.start_on : p0, days = daysTo(from, p1) + 1, f = days / dim, part = f < 1 ? ' (' + days + ' of ' + dim + ' days)' : '';
+    var area = +u.area_m2 || 0, lines = [];
+    if (l.end_on && l.end_on < p0) warn.push(u.name + ': lease ended ' + niceY(l.end_on) + '; billed at the current rent until a new lease is saved.');
+    var rent = leaseCalc(l, u, from).rent * f;
+    lines.push({ description: 'Rent ' + monthName(p0) + part, amount: r2(rent), vat_rate: vatOn ? 15 : 0 });
+    D.charges.forEach(function(ct){
+      var row = chargeRow(D, u, ct); if (!row.enabled) return;
+      var m = row.method || ct.method, vr = vatOn && ct.vat ? 15 : 0;
+      if (m === 'metered' && !row.has_meter) m = 'share';
+      if (m === 'off') return;
+      if (m === 'fixed') { var a = (row.amount != null ? +row.amount : +ct.rate) * f; if (a) lines.push({ description: ct.name + part, amount: r2(a), vat_rate: vr }); return; }
+      if (m === 'per_m2') { if (!area) { warn.push(u.name + ': ' + ct.name + ' needs the m².'); return; }
+        if (+ct.rate) lines.push({ description: ct.name + ' (' + area + ' m² × ' + money(cur, +ct.rate) + ')' + part, amount: r2(area * ct.rate * f), vat_rate: vr }); return; }
+      if (m === 'share') {
+        if (!(ct.id in bills)) { if (!warned[ct.id]) { warn.push('No centre bill entered for ' + ct.name + ', so it is left off.'); warned[ct.id] = 1; } return; }
+        if (!area || !T.basis) { warn.push(u.name + ': ' + ct.name + ' needs the m².'); return; }
+        var pc = area / T.basis;
+        lines.push({ description: ct.name + ' (' + (Math.round(pc * 10000) / 100) + '% of ' + money(cur, bills[ct.id]) + ')', amount: r2(bills[ct.id] * pc), vat_rate: vr }); return; }
+      if (m === 'metered') {
+        var rd = reads[u.id + '_' + ct.id];
+        if (!rd || rd.curr == null || rd.curr === '' || rd.prev == null || rd.prev === '') { warn.push(u.name + ': no ' + ct.name.toLowerCase() + ' reading, so it is left off.'); return; }
+        var used = +rd.curr - +rd.prev;
+        if (used < 0) { warn.push(u.name + ': the ' + ct.name.toLowerCase() + ' reading is lower than last month; left off.'); return; }
+        lines.push({ description: ct.name + ' meter ' + (row.meter_no || '') + ': ' + rd.prev + ' to ' + rd.curr + ' = ' + r2(used) + ' × ' + money(cur, +ct.rate) + (+ct.basic ? ' + basic ' + money(cur, +ct.basic) : ''),
+                     amount: r2(used * ct.rate + +ct.basic), vat_rate: vr });
+      }
+    });
+    (inp.extras || []).forEach(function(x){ if (x.unit_id === u.id) lines.push({ description: x.description, amount: r2(+x.amount), vat_rate: vatOn && x.vat ? 15 : 0 }); });
+    out.push({ unit_id: u.id, lease_id: l.id, unit: u.name, tenant: l.tenant_name, lines: lines.filter(function(x){ return x.amount !== 0; }) });
+  });
+  return { invoices: out, warnings: warn };
+}
+
+var BILL_PERIOD = null, BILL_OPEN = null;
+function ownerBilling(box, s, top){
+  box.innerHTML = '<div class="loading">Loading…</div>';
+  rpc('ctr_mgmt_home', { p_centre: CID, p_code: s.code }).then(function(D){
+    if (!D.ok) { box.innerHTML = '<div class="msg err">' + esc(D.msg) + '</div>'; return; }
+    var thisMonth = monthStart(D.today);
+    var first = !BILL_PERIOD;
+    if (first) BILL_PERIOD = thisMonth;
+    rpc('ctr_billing_home', { p_centre: CID, p_code: s.code, p_period: BILL_PERIOD }).then(function(B){
+      if (!B.ok) { box.innerHTML = '<div class="msg err">' + esc(B.msg) + '</div>'; return; }
+      // first time in: open on the first month not yet sent (this month, or next month once this month is sent)
+      if (first && B.run && B.run.status === 'sent') { BILL_PERIOD = addMonths(thisMonth, 1); return ownerBilling(box, s, top); }
+      drawBilling(box, s, top, D, B);
+    });
+  });
+}
+
+function drawBilling(box, s, top, D, B){
+  var lh = B.letterhead, cur = lh.currency, run = B.run, sent = run && run.status === 'sent', period = B.period, T = mgmtTotals(D);
+  var inp = run ? run.inputs : { bills: [], readings: [], extras: [] };
+  inp.bills = inp.bills || []; inp.readings = inp.readings || []; inp.extras = inp.extras || [];
+  var lastRead = {}; B.last_readings.forEach(function(r){ lastRead[r.unit_id + '_' + r.charge_id] = r.curr; });
+  var billed = D.units.filter(function(u){ var l = T.leaseOf[u.id]; return !u.vacant && l && l.start_on <= monthEnd(period); });
+  // which charges need a centre bill, and which meters need a reading
+  var needBill = {}, meters = [];
+  billed.forEach(function(u){ D.charges.forEach(function(ct){
+    var row = chargeRow(D, u, ct); if (!row.enabled) return;
+    var m = row.method || ct.method;
+    if (m === 'metered' && row.has_meter) meters.push({ u: u, ct: ct, row: row });
+    else if (m === 'share' || m === 'metered') needBill[ct.id] = ct;
+  }); });
+  var months = []; for (var k = -3; k <= 2; k++) months.push(addMonths(monthStart(D.today), k));
+  if (months.indexOf(period) < 0) months.push(period);
+  var invs = B.invoices, totals = invs.filter(function(i){ return i.status !== 'void'; }).reduce(function(a, i){ a.s += +i.subtotal; a.v += +i.vat; a.t += +i.total; return a; }, { s: 0, v: 0, t: 0 });
+  var html = top +
+    '<div class="box"><label style="margin-top:0">Month to bill (rent in advance)</label><select id="blMonth">' +
+      months.map(function(p){ var r = B.runs.filter(function(x){ return x.period === p; })[0];
+        return '<option value="' + p + '"' + (p === period ? ' selected' : '') + '>' + monthName(p) + (r ? (r.status === 'sent' ? ' · sent' : ' · draft') : '') + '</option>'; }).join('') +
+    '</select><div class="hint">' + (sent ? 'Sent on ' + niceY(run.sent_at.slice(0,10)) + '. This month is closed.' : run && run.id ? 'Drafts made. Check them, then send.' : 'Nothing made for this month yet.') + '</div></div>';
+  if (!sent) {
+    html += '<div class="h3">1 · This month\'s bills to share</div>' +
+      (Object.keys(needBill).length ? '<div class="box">' + Object.keys(needBill).map(function(id){
+        var ct = needBill[id], b = inp.bills.filter(function(x){ return String(x.charge_id) === String(id); })[0];
+        return '<label>' + esc(ct.name) + ' · the centre\'s bill (' + cur + ', excl. VAT)' + (ct.method === 'metered' ? ' · shared only by shops without a meter' : '') +
+          '</label><input data-bill="' + id + '" inputmode="decimal" value="' + esc(b && b.amount != null ? b.amount : '') + '">';
+      }).join('') + '<div class="hint">Each shop pays its share by m² (' + (D.centre.share_basis === 'let' ? 'let m² only' : 'whole centre') + '). Leave empty to leave a charge off this month.</div></div>'
+      : '<div class="box empty">No shared bills this month.</div>') +
+      '<div class="h3">2 · Meter readings</div>' +
+      (meters.length ? '<div class="box">' + meters.map(function(x){
+        var key = x.u.id + '_' + x.ct.id, r = inp.readings.filter(function(y){ return y.unit_id === x.u.id && y.charge_id === x.ct.id; })[0];
+        var prev = r && r.prev != null ? r.prev : (key in lastRead ? lastRead[key] : '');
+        return '<div class="crow" data-read="' + key + '"><div class="nm">' + esc(x.u.name) + ' · ' + esc(x.ct.name) + (x.row.meter_no ? ' · ' + esc(x.row.meter_no) : '') + '</div>' +
+          '<div class="two"><div><label>Last reading</label><input data-prev inputmode="decimal" value="' + esc(prev) + '"></div>' +
+          '<div><label>This reading</label><input data-curr inputmode="decimal" value="' + esc(r && r.curr != null ? r.curr : '') + '"></div></div></div>';
+      }).join('') + '</div>' : '<div class="box empty">No meters.</div>') +
+      '<div class="h3">3 · Once-off lines</div><div class="box"><div id="blExtras">' +
+        (inp.extras.length ? inp.extras.map(function(x, i){ var u = D.units.filter(function(v){ return v.id === x.unit_id; })[0];
+          return '<div class="crow"><div class="hd"><span>' + esc(u ? u.name : '?') + ': ' + esc(x.description) + ' · ' + money(cur, +x.amount) + (x.vat ? ' + VAT' : '') + '</span>' +
+            '<span class="b sm no" data-xdel="' + i + '">Remove</span></div></div>'; }).join('') : '<div class="empty">None.</div>') +
+        '</div><label>Shop</label><select id="xU">' + billed.map(function(u){ return '<option value="' + u.id + '">' + esc(u.name) + '</option>'; }).join('') + '</select>' +
+        '<div class="two"><div><label>Description</label><input id="xD" maxlength="80" placeholder="e.g. Key replacement"></div><div><label>Amount (' + cur + ', excl. VAT)</label><input id="xA" inputmode="decimal"></div></div>' +
+        '<label class="chk" style="margin-top:10px"><input type="checkbox" id="xV" checked> Add VAT</label>' +
+        '<div class="btns"><div class="b sm" id="xAdd">Add line</div></div></div>' +
+      '<div class="b main wide" id="blMake">' + (run && run.id ? 'Make the drafts again' : 'Make draft invoices') + '</div><div class="msg" id="blMsg"></div><div id="blWarn"></div>';
+  }
+  if (invs.length) {
+    html += '<div class="h3">' + (sent ? 'Invoices sent' : 'Draft invoices') + ' · ' + invs.length + '</div>' +
+      '<div class="tiles"><div class="tile"><div class="k">Excl. VAT</div><div class="v">' + money(cur, totals.s) + '</div></div>' +
+      '<div class="tile"><div class="k">Total incl. VAT</div><div class="v">' + money(cur, totals.t) + '</div><div class="s">VAT ' + money(cur, totals.v) + '</div></div></div>' +
+      invs.map(function(i){
+        return '<div class="item rr" data-inv="' + i.id + '"><div class="top" data-iopen="' + i.id + '"><div><div class="ti">' + esc(i.unit_name) + '</div>' +
+          '<div class="mt">' + esc(i.tenant_name) + (i.number ? ' · ' + esc(i.number) : '') + '</div></div><div style="text-align:right"><div class="amt">' + money(cur, +i.total) + '</div>' +
+          (i.status === 'void' ? '<span class="st rejected">Cancelled</span>' : i.status === 'sent' ? '<span class="st approved">Sent</span>' : '<span class="st pending">Draft</span>') + '</div></div>' +
+          (BILL_OPEN === i.id ? '<div class="box" style="margin-top:10px;cursor:default" data-icard>' + i.lines.map(function(l){
+              return '<div class="crow"><div class="hd"><span style="font-size:13px">' + esc(l.description) + '</span><b style="white-space:nowrap">' + money(cur, +l.amount) + '</b></div>' +
+                (+l.vat_rate ? '<div class="est">+ VAT ' + money(cur, +l.vat) + '</div>' : '<div class="est">no VAT</div>') + '</div>'; }).join('') +
+            '<div class="crow"><div class="hd"><b>Total incl. VAT</b><b>' + money(cur, +i.total) + '</b></div></div>' +
+            '<div class="btns"><div class="b sm main" data-ipdf="share">' + (i.status === 'draft' ? 'Draft PDF' : 'Send PDF') + '</div><div class="b sm" data-ipdf="save">Download</div>' +
+            (i.status === 'sent' ? '<div class="b sm no" data-ivoid>Cancel invoice</div>' : '') + '</div><div class="slot"></div><div class="msg" data-im></div></div>' : '') +
+        '</div>';
+      }).join('');
+    if (!sent) html += '<div class="b ok wide" id="blSend">Send all ' + invs.length + ' invoices</div><div class="slot" id="blSendSlot"></div>';
+  }
+  html += '<details class="box" style="margin-top:18px"><summary style="font-weight:700;cursor:pointer">Invoice settings (letterhead, bank, numbering)</summary>' +
+    '<label>Company name on invoices</label><input id="bsLegal" maxlength="100" value="' + esc(lh.legal_name || '') + '" placeholder="e.g. Sample Centre Properties (Pty) Ltd">' +
+    '<label>Email</label><input id="bsEmail" maxlength="120" value="' + esc(lh.email || '') + '">' +
+    '<label>Banking details</label><textarea id="bsBank" maxlength="400">' + esc(lh.bank || '') + '</textarea>' +
+    '<label>Payment terms</label><textarea id="bsTerms" maxlength="400">' + esc(lh.terms || '') + '</textarea>' +
+    '<div class="two"><div><label>Number starts with</label><input id="bsPrefix" maxlength="10" value="' + esc(lh.inv_prefix || '') + '"></div>' +
+    '<div><label>Next number</label><input id="bsNext" inputmode="numeric" value="' + esc(lh.inv_next) + '"></div></div>' +
+    '<label class="chk" style="margin-top:12px"><input type="checkbox" id="bsVat"' + (lh.vat_registered ? ' checked' : '') + '> VAT registered (15%): TAX INVOICE</label>' +
+    '<div class="hint">The VAT number, address and phone are on the Charges and Centre tabs.</div>' +
+    '<div class="b main wide" id="bsSave">Save invoice settings</div><div class="msg" id="bsMsg"></div></details>' +
+    '<div class="b wide" id="out">Log out</div>';
+  box.innerHTML = html;
+
+  function readInputs(){
+    var o = { bills: [], readings: [], extras: inp.extras.slice() }, bad = null;
+    box.querySelectorAll('[data-bill]').forEach(function(el){ var v = toNum(el.value); if (v != null && (isNaN(v) || v < 0)) bad = 'A bill amount is not a number.'; if (v != null) o.bills.push({ charge_id: Number(el.getAttribute('data-bill')), amount: v }); });
+    box.querySelectorAll('[data-read]').forEach(function(el){ var k = el.getAttribute('data-read').split('_'), pv = toNum(el.querySelector('[data-prev]').value), cv = toNum(el.querySelector('[data-curr]').value);
+      if ((pv != null && isNaN(pv)) || (cv != null && isNaN(cv))) bad = 'A meter reading is not a number.';
+      o.readings.push({ unit_id: Number(k[0]), charge_id: Number(k[1]), prev: pv, curr: cv }); });
+    return bad ? { bad: bad } : o;
+  }
+  var mon = $('blMonth'); if (mon) mon.onchange = function(){ BILL_PERIOD = mon.value; BILL_OPEN = null; ownerBilling(box, s, ''); };
+  var xa = $('xAdd'); if (xa) xa.onclick = function(){
+    var a = toNum($('xA').value), d = $('xD').value.trim();
+    if (!d || a == null || isNaN(a)) { $('blMsg').className = 'msg err'; $('blMsg').textContent = 'Fill in the description and amount of the once-off line.'; return; }
+    inp.extras.push({ unit_id: Number($('xU').value), description: d, amount: a, vat: $('xV').checked });
+    var keep = readInputs(); if (!keep.bad) { inp.bills = keep.bills; inp.readings = keep.readings; }
+    drawBilling(box, s, '', D, Object.assign({}, B, { run: Object.assign({}, run || { status: 'draft' }, { inputs: inp }) }));
+  };
+  box.querySelectorAll('[data-xdel]').forEach(function(el){ el.onclick = function(){
+    inp.extras.splice(Number(el.getAttribute('data-xdel')), 1);
+    var keep = readInputs(); if (!keep.bad) { inp.bills = keep.bills; inp.readings = keep.readings; }
+    drawBilling(box, s, '', D, Object.assign({}, B, { run: Object.assign({}, run || { status: 'draft' }, { inputs: inp }) }));
+  }; });
+  var mk = $('blMake'); if (mk) mk.onclick = function(){
+    var m = $('blMsg'), o = readInputs();
+    if (o.bad) { m.className = 'msg err'; m.textContent = o.bad; return; }
+    var c = computeRun(D, lh, period, o);
+    if (!c.invoices.length) { m.className = 'msg err'; m.textContent = 'There are no leases to bill for ' + monthName(period) + '.'; return; }
+    m.className = 'msg'; m.textContent = 'Making ' + c.invoices.length + ' draft invoices…';
+    rpc('ctr_run_save', { p_centre: CID, p_code: s.code, p_period: period, p_inputs: o,
+        p_invoices: c.invoices.map(function(i){ return { unit_id: i.unit_id, lease_id: i.lease_id, lines: i.lines }; }) }).then(function(x){
+      if (!x.ok) { m.className = 'msg err'; m.textContent = x.msg; return; }
+      BILL_OPEN = null;
+      ownerBilling(box, s, '<div class="msg ok">' + x.drafts + ' draft invoices made for ' + monthName(period) + '. Check them below, then send.</div>' +
+        (c.warnings.length ? '<div class="ask" style="margin-top:10px"><b>Please check:</b><br>' + c.warnings.map(esc).join('<br>') + '</div>' : ''));
+    });
+  };
+  var sd = $('blSend'); if (sd) sd.onclick = function(){
+    var slot = $('blSendSlot');
+    slot.innerHTML = '<div class="ask">Send all ' + invs.length + ' invoices for ' + monthName(period) + '? They get their numbers and can no longer be changed.' +
+      '<label style="color:inherit">Invoice date</label><input type="date" data-d value="' + period + '">' +
+      '<div class="btns"><div class="b sm ok" data-y>Yes, send them</div><div class="b sm" data-n>No</div></div><div class="msg" data-m></div></div>';
+    slot.querySelector('[data-n]').onclick = function(){ slot.innerHTML = ''; };
+    slot.querySelector('[data-y]').onclick = function(){
+      rpc('ctr_run_send', { p_centre: CID, p_code: s.code, p_period: period, p_inv_date: slot.querySelector('[data-d]').value || null }).then(function(x){
+        if (!x.ok) { var mm = slot.querySelector('[data-m]'); mm.className = 'msg err'; mm.textContent = x.msg; return; }
+        BILL_OPEN = null;
+        ownerBilling(box, s, '<div class="msg ok">' + x.sent + ' invoices sent and numbered. Tap one to send its PDF; tenants also see them on My shop.</div>');
+      });
+    };
+  };
+  box.querySelectorAll('[data-iopen]').forEach(function(el){ el.onclick = function(){
+    var id = Number(el.getAttribute('data-iopen')); BILL_OPEN = BILL_OPEN === id ? null : id; drawBilling(box, s, top, D, B);
+  }; });
+  var card = box.querySelector('[data-icard]');
+  if (card) {
+    var inv = invs.filter(function(i){ return i.id === BILL_OPEN; })[0], im = card.querySelector('[data-im]');
+    card.querySelectorAll('[data-ipdf]').forEach(function(b){ b.onclick = function(){
+      withPdf(im, function(){ return pdfOut(buildInvoicePdf(inv, lh), invoiceFileName(inv, lh), (lh.vat_registered ? 'Tax invoice ' : 'Invoice ') + (inv.number || 'draft'), b.getAttribute('data-ipdf'), im); });
+    }; });
+    var vd = card.querySelector('[data-ivoid]');
+    if (vd) vd.onclick = function(){
+      var slot = card.querySelector('.slot');
+      slot.innerHTML = '<div class="ask">Cancel invoice ' + esc(inv.number) + '? It stays on record as cancelled and comes off the tenant\'s statement.' +
+        '<input data-why maxlength="200" style="margin-top:8px" placeholder="Reason, e.g. wrong rent">' +
+        '<div class="btns"><div class="b sm no" data-y>Yes, cancel it</div><div class="b sm" data-n>No</div></div><div class="msg" data-m></div></div>';
+      slot.querySelector('[data-n]').onclick = function(){ slot.innerHTML = ''; };
+      slot.querySelector('[data-y]').onclick = function(){
+        rpc('ctr_invoice_void', { p_centre: CID, p_code: s.code, p_id: inv.id, p_reason: slot.querySelector('[data-why]').value }).then(function(x){
+          if (!x.ok) { var mm = slot.querySelector('[data-m]'); mm.className = 'msg err'; mm.textContent = x.msg; return; }
+          ownerBilling(box, s, '<div class="msg ok">Invoice ' + esc(inv.number) + ' cancelled.</div>');
+        });
+      };
+    };
+  }
+  $('bsSave').onclick = function(){
+    var m = $('bsMsg'); m.className = 'msg'; m.textContent = 'Saving…';
+    rpc('ctr_billing_settings_save', { p_centre: CID, p_code: s.code, p: { legal_name: $('bsLegal').value, email: $('bsEmail').value, bank: $('bsBank').value,
+        terms: $('bsTerms').value, inv_prefix: $('bsPrefix').value.trim(), inv_next: $('bsNext').value, vat_registered: $('bsVat').checked } }).then(function(x){
+      if (!x.ok) { m.className = 'msg err'; m.textContent = x.msg; return; }
+      m.className = 'msg ok'; m.textContent = 'Invoice settings saved.';
+    });
+  };
+  $('out').onclick = function(){ setSess(null); bar(); go('#'); };
+}
+
+// ---------- statements and payments ----------
+var ST_OPEN = null;
+function ownerStatements(box, s, top){
+  box.innerHTML = '<div class="loading">Loading…</div>';
+  rpc('ctr_statements_home', { p_centre: CID, p_code: s.code }).then(function(S){
+    if (!S.ok) { box.innerHTML = '<div class="msg err">' + esc(S.msg) + '</div>'; return; }
+    var lh = S.letterhead, cur = lh.currency, today = S.today, owed = 0, over30 = 0, over90 = 0;
+    var rows = S.leases.map(function(l){
+      var L = ledger(S.invoices.filter(function(i){ return i.lease_id === l.id; }), S.payments.filter(function(p){ return p.lease_id === l.id; }), today);
+      owed += Math.max(0, L.balance); over30 += L.age.d30 + L.age.d60 + L.age.d90; over90 += L.age.d90;
+      return { l: l, L: L };
+    });
+    box.innerHTML = top +
+      '<div class="tiles"><div class="tile"><div class="k">Owed to the centre</div><div class="v">' + money(cur, owed) + '</div></div>' +
+      '<div class="tile"><div class="k">30 days and older</div><div class="v">' + money(cur, r2(over30)) + '</div><div class="s">' + money(cur, r2(over90)) + ' is 90+ days</div></div></div>' +
+      '<div class="h3">Tenants</div>' +
+      rows.map(function(x){
+        var l = x.l, L = x.L, pill = L.balance > 0.004 ? (L.age.d30 + L.age.d60 + L.age.d90 > 0 ? '<span class="st rejected">Behind</span>' : '<span class="st pending">Owes</span>')
+                                 : L.balance < -0.004 ? '<span class="st approved">In credit</span>' : '<span class="st approved">Paid up</span>';
+        return '<div class="item rr" data-st="' + l.id + '"><div class="top" data-sopen="' + l.id + '"><div><div class="ti">' + esc(l.unit) + (l.ended_on ? ' (left)' : '') + '</div>' +
+          '<div class="mt">' + esc(l.tenant_name) + '</div>' +
+          (L.age.d30 + L.age.d60 + L.age.d90 > 0 ? '<div class="mt">30d ' + money(cur, L.age.d30) + ' · 60d ' + money(cur, L.age.d60) + ' · 90d+ ' + money(cur, L.age.d90) + '</div>' : '') +
+          '</div><div style="text-align:right"><div class="amt">' + money(cur, L.balance) + '</div>' + pill + '</div></div>' +
+          (ST_OPEN === l.id ? stCard(l, L, cur, today) : '') + '</div>';
+      }).join('') +
+      '<div class="b wide" id="out">Log out</div>';
+    box.querySelectorAll('[data-sopen]').forEach(function(el){ el.onclick = function(){
+      var id = Number(el.getAttribute('data-sopen')); ST_OPEN = ST_OPEN === id ? null : id; ownerStatements(box, s, '');
+    }; });
+    var card = box.querySelector('[data-scard]');
+    if (card) {
+      var x = rows.filter(function(r){ return r.l.id === ST_OPEN; })[0], sm = card.querySelector('[data-sm]');
+      card.querySelectorAll('[data-spdf]').forEach(function(b){ b.onclick = function(){
+        withPdf(sm, function(){ return pdfOut(buildStatementPdf(x.l, x.L, lh, today), ('Statement ' + x.l.tenant_name + ' ' + today).replace(/[\\/:*?"<>|]+/g, '-') + '.pdf',
+                                              'Statement ' + x.l.tenant_name, b.getAttribute('data-spdf'), sm); });
+      }; });
+      card.querySelectorAll('[data-rinv]').forEach(function(b){ b.onclick = function(){
+        var inv = S.invoices.filter(function(i){ return i.id === Number(b.getAttribute('data-rinv')); })[0];
+        withPdf(sm, function(){ return pdfOut(buildInvoicePdf(inv, lh), invoiceFileName(inv, lh), 'Invoice ' + inv.number, 'share', sm); });
+      }; });
+      card.querySelector('[data-padd]').onclick = function(){
+        var a = toNum(card.querySelector('[data-pa]').value);
+        if (a == null || isNaN(a)) { sm.className = 'msg err'; sm.textContent = 'Fill in the amount received.'; return; }
+        rpc('ctr_payment_add', { p_centre: CID, p_code: s.code, p_lease: x.l.id, p_paid_on: card.querySelector('[data-pd]').value || null, p_amount: a,
+            p_reference: card.querySelector('[data-pr]').value, p_note: null }).then(function(r){
+          if (!r.ok) { sm.className = 'msg err'; sm.textContent = r.msg; return; }
+          ownerStatements(box, s, '<div class="msg ok">Payment of ' + money(cur, a) + ' recorded for ' + esc(x.l.unit) + '.</div>');
+        });
+      };
+      card.querySelectorAll('[data-pdel]').forEach(function(b){ b.onclick = function(){
+        var pid = Number(b.getAttribute('data-pdel'));
+        askIn(card.querySelector('.slot'), 'Remove this payment?', 'Yes, remove it', function(){
+          return rpc('ctr_payment_remove', { p_centre: CID, p_code: s.code, p_id: pid }).then(function(r){ if (r.ok) ownerStatements(box, s, '<div class="msg ok">Payment removed.</div>'); return r; });
+        });
+      }; });
+    }
+    $('out').onclick = function(){ setSess(null); bar(); go('#'); };
+  });
+}
+function stCard(l, L, cur, today){
+  return '<div class="box" style="margin-top:10px;cursor:default" data-scard>' +
+    (L.rows.length ? L.rows.map(function(r){
+      return '<div class="crow"><div class="hd"><span style="font-size:13px">' + niceY(r.date) + ' · ' + esc(r.desc) + (r.ref ? ' · ' + esc(r.ref) : '') + '</span>' +
+        '<b style="white-space:nowrap">' + (r.debit ? money(cur, r.debit) : r.credit ? '−' + money(cur, r.credit) : '') + '</b></div>' +
+        '<div class="est">Balance ' + money(cur, r.balance) +
+        (r.kind === 'inv' && r.inv.status === 'sent' ? ' · <span class="lnk" data-rinv="' + r.inv.id + '" style="color:var(--brand);font-weight:600;cursor:pointer">invoice PDF</span>' : '') +
+        (r.kind === 'pay' ? ' · <span data-pdel="' + r.pay.id + '" style="color:var(--bad);font-weight:600;cursor:pointer">remove</span>' : '') + '</div></div>';
+    }).join('') : '<div class="empty">No invoices or payments yet.</div>') +
+    '<div class="slot"></div>' +
+    '<div class="btns"><div class="b sm main" data-spdf="share">Send statement PDF</div><div class="b sm" data-spdf="save">Download</div></div>' +
+    '<div class="sub">Record a payment</div>' +
+    '<div class="two"><div><label>Received on</label><input type="date" data-pd value="' + today + '"></div><div><label>Amount (' + cur + ')</label><input data-pa inputmode="decimal"></div></div>' +
+    '<label>Reference</label><input data-pr maxlength="60" placeholder="e.g. EFT ' + esc(l.unit) + '">' +
+    '<div class="btns"><div class="b sm ok" data-padd>Record payment</div></div><div class="msg" data-sm></div></div>';
+}
+
+// ---------- tenant: My account on My shop (Block 1) ----------
+function shopAccount(el, s){
+  rpc('ctr_shop_account', { p_centre: CID, p_code: s.code }).then(function(A){
+    if (!A || !A.ok || !A.lease) { el.innerHTML = ''; return; }
+    var lh = A.letterhead, cur = lh.currency, L = ledger(A.invoices, A.payments, A.today);
+    el.innerHTML = '<div class="h3">My account</div><div class="box">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center"><div><div class="hint" style="margin:0">' + (L.balance < 0 ? 'In credit' : 'Balance due') + '</div>' +
+      '<div style="font-size:22px;font-weight:800">' + money(cur, Math.abs(L.balance)) + '</div></div>' +
+      '<div class="b sm main" data-acst>Statement PDF</div></div>' +
+      (L.age.d30 + L.age.d60 + L.age.d90 > 0 ? '<div class="msg err" style="margin-top:10px">' + money(cur, r2(L.age.d30 + L.age.d60 + L.age.d90)) + ' is 30 days or older.</div>' : '') +
+      (A.invoices.length ? A.invoices.slice().reverse().slice(0, 6).map(function(i){
+        return '<div class="crow"><div class="hd"><span><b>' + esc(i.number) + '</b> · ' + monthName(i.period) + '</span><b>' + money(cur, +i.total) + '</b></div>' +
+          '<div class="est"><span data-acinv="' + i.id + '" style="color:var(--brand);font-weight:600;cursor:pointer">Invoice PDF</span></div></div>'; }).join('')
+        : '<div class="empty" style="margin-top:8px">No invoices yet.</div>') +
+      '<div class="msg" data-acm></div></div>';
+    var m = el.querySelector('[data-acm]'), lease = { tenant_name: A.lease.tenant_name, unit: A.lease.unit };
+    el.querySelector('[data-acst]').onclick = function(){
+      withPdf(m, function(){ return pdfOut(buildStatementPdf(lease, L, lh, A.today), ('Statement ' + lease.tenant_name + ' ' + A.today).replace(/[\\/:*?"<>|]+/g, '-') + '.pdf', 'Statement', 'share', m); });
+    };
+    el.querySelectorAll('[data-acinv]').forEach(function(b){ b.onclick = function(){
+      var inv = A.invoices.filter(function(i){ return i.id === Number(b.getAttribute('data-acinv')); })[0];
+      withPdf(m, function(){ return pdfOut(buildInvoicePdf(inv, lh), invoiceFileName(inv, lh), 'Invoice ' + inv.number, 'share', m); });
+    }; });
+  });
+}
+
+// ---------- router ----------
+function route(){
+  var h = location.hash.replace(/^#/, '');
+  top0();
+  if (!CID) { // no ?c= in the link: find the centre first, then carry on
+    APP.innerHTML = '<div class="loading">Loading…</div>';
+    loadDoor().then(function(d){
+      if (d && d.ok) route();
+      else APP.innerHTML = '<div class="pad"><div class="msg err">' + esc(d ? d.msg : 'Could not load.') + '</div></div>';
+    });
+    return;
+  }
+  bar();
+  if (MODE === 'office') {           // Block 2: the centre office only
+    document.title = 'ESM Office';
+    if (h === 'login/owner') return pageLogin('owner');
+    OWNER_TAB = OWNER_TAB || 'approve'; return pageOwner();
+  }
+  if (h === 'login/owner' || h === 'owner') { go('#'); return; }   // Block 1 has no owner login
+  if (h === 'login/shop') return pageLogin('shop');
+  if (h === 'myshop') return pageMyShop();
+  APP.innerHTML = '<div class="loading">Loading…</div>';
+  loadDoor().then(function(d){
+    if (!d || !d.ok) { APP.innerHTML = '<div class="pad"><div class="msg err">' + esc(d ? d.msg : 'Could not load.') + '</div></div>'; return; }
+    bar();
+    if (h === 'shops') return pageShops();
+    var m = h.match(/^shop\/(\d+)$/);
+    if (m) return pageShop(Number(m[1]));
+    pageDoor();
+  });
+}
+window.addEventListener('hashchange', route);
+route();
+})();
+</script>
+</body>
+</html>

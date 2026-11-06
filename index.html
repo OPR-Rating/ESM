@@ -167,7 +167,8 @@ input[type=date]{-webkit-appearance:none;appearance:none;min-height:44px}
 <script>
 (function(){
 'use strict';
-var ESM_BUILD = 'ESM e2';
+var ESM_BUILD = 'ESM e3';
+var MODE = 'shop';   // Block 1 = 'shop' (index.html: shoppers + tenants) · Block 2 = 'office' (office.html). Set by build_esm.py.
 var SB_URL = 'https://pqduivcxwykcixqsfrwi.supabase.co';
 var SB_KEY = 'sb_publishable_Cl8uDRrLqx9VMaC3lifpWA_Wl91vVy2';   // OTR-Tennis public (publishable) key
 var CATS = ['Food','Fashion','Health','Services','Fuel & car','Other'];
@@ -215,18 +216,17 @@ function go(h){ if (location.hash === h) route(); else location.hash = h; }
 function top0(){ window.scrollTo(0,0); }
 
 function mini(title, backTo){
-  return '<div class="mini"><button class="back" data-go="' + esc(backTo) + '">‹ Back</button><div class="t">' + esc(title) + '</div></div>';
+  return '<div class="mini">' + (backTo ? '<button class="back" data-go="' + esc(backTo) + '">‹ Back</button>' : '') +
+    '<div class="t">' + esc(title) + '</div></div>';
 }
 
 function bar(){
+  if (MODE === 'office') { BAR.parentNode.style.display = 'none'; return; }   // Block 2 has no bottom bar
   var s = sess();
-  var left = s && s.role === 'shop'
-    ? '<div class="btn" data-go="#myshop">My shop</div>'
-    : '<div class="btn" data-go="#login/shop">Tenant login</div>';
-  var right = s && s.role === 'owner'
-    ? '<div class="btn main" data-go="#owner">Owner desk</div>'
-    : '<div class="btn main" data-go="#login/owner">Owner login</div>';
-  BAR.innerHTML = left + right;
+  BAR.style.gridTemplateColumns = '1fr';
+  BAR.innerHTML = s && s.role === 'shop'
+    ? '<div class="btn main" data-go="#myshop">My shop</div>'
+    : '<div class="btn main" data-go="#login/shop">Tenant login</div>';
 }
 
 document.addEventListener('click', function(e){
@@ -338,7 +338,7 @@ function pageShop(id){
 
 function pageLogin(role){
   var isOwner = role === 'owner';
-  APP.innerHTML = mini(isOwner ? 'Owner login' : 'Tenant login', '#') +
+  APP.innerHTML = mini(isOwner ? 'Centre office · owner login' : 'Tenant login', isOwner ? null : '#') +
     '<div class="pad"><div class="box">' +
       '<label for="code">' + (isOwner ? 'Owner code' : 'Your shop code') + '</label>' +
       '<input id="code" inputmode="numeric" maxlength="6" autocomplete="off" placeholder="6 digits">' +
@@ -351,8 +351,8 @@ function pageLogin(role){
     $('m').className = 'msg'; $('m').textContent = 'Checking…';
     rpc('ctr_login', { p_centre: CID, p_code: code }).then(function(r){
       if (!r.ok) { $('m').className = 'msg err'; $('m').textContent = r.msg; return; }
-      if (isOwner && r.role !== 'owner') { $('m').className = 'msg err'; $('m').textContent = 'That is a shop code. Use Tenant login.'; return; }
-      if (!isOwner && r.role !== 'shop') { $('m').className = 'msg err'; $('m').textContent = 'That is the owner code. Use Owner login.'; return; }
+      if (isOwner && r.role !== 'owner') { $('m').className = 'msg err'; $('m').textContent = 'That is a shop code. Shops log in on the centre\'s shop page, not in the office.'; return; }
+      if (!isOwner && r.role !== 'shop') { $('m').className = 'msg err'; $('m').textContent = 'That is the owner code. The owner logs in at the centre office page.'; return; }
       setSess({ role: r.role, code: code, unit: r.unit ? r.unit.name : null }); bar();
       go(isOwner ? '#owner' : '#myshop');
     });
@@ -386,6 +386,7 @@ function pageMyShop(note){
         '<label for="en">Last day</label><input id="en" type="date" min="' + today + '" max="' + addDays(today, 60) + '" value="' + addDays(today, 7) + '">' +
         '<div class="b main wide" id="send">Send for approval</div><div class="msg' + (note ? ' ok' : '') + '" id="m">' + esc(note || '') + '</div>' +
       '</div>' +
+      '<div id="acct"></div>' +
       '<div class="h3">Your specials</div><div id="mine"></div>' +
       '<div class="b wide" id="out">Log out</div></div>';
     $('mine').innerHTML = r.specials.length ? r.specials.map(function(x){
@@ -396,6 +397,7 @@ function pageMyShop(note){
         (x.status === 'rejected' && x.reason ? '<div class="mt">Reason: ' + esc(x.reason) + '</div>' : '') +
         '<div class="btns"><div class="b sm no" data-rm="' + x.id + '">Remove</div></div><div class="slot"></div></div>';
     }).join('') : '<div class="empty">You have not posted any specials yet.</div>';
+    shopAccount($('acct'), s);
     $('send').onclick = function(){
       var m = $('m');
       m.className = 'msg'; m.textContent = 'Sending…';
@@ -432,15 +434,17 @@ var OWNER_TAB = 'approve';
 function pageOwner(note){
   var s = sess();
   if (!s || s.role !== 'owner') { go('#login/owner'); return; }
-  APP.innerHTML = mini('Owner desk', '#') + '<div class="loading">Loading…</div>';
+  APP.innerHTML = mini('Centre office', null) + '<div class="loading">Loading…</div>';
   rpc('ctr_owner_home', { p_centre: CID, p_code: s.code }).then(function(r){
-    if (!r.ok) { setSess(null); bar(); APP.innerHTML = mini('Owner desk', '#') + '<div class="pad"><div class="msg err">' + esc(r.msg) + '</div></div>'; return; }
-    APP.innerHTML = mini('Owner desk · ' + r.centre.name, '#') +
+    if (!r.ok) { setSess(null); bar(); APP.innerHTML = mini('Centre office', null) + '<div class="pad"><div class="msg err">' + esc(r.msg) + '</div></div>'; return; }
+    APP.innerHTML = mini('Centre office · ' + r.centre.name, null) +
       '<div class="tabs">' +
         '<div class="tab' + (OWNER_TAB === 'approve' ? ' on' : '') + '" data-tab="approve">To approve' + (r.pending.length ? '<span class="cnt">' + r.pending.length + '</span>' : '') + '</div>' +
         '<div class="tab' + (OWNER_TAB === 'shops' ? ' on' : '') + '" data-tab="shops">Shops</div>' +
         '<div class="tab' + (OWNER_TAB === 'leases' ? ' on' : '') + '" data-tab="leases">Leases</div>' +
         '<div class="tab' + (OWNER_TAB === 'charges' ? ' on' : '') + '" data-tab="charges">Charges</div>' +
+        '<div class="tab' + (OWNER_TAB === 'billing' ? ' on' : '') + '" data-tab="billing">Billing</div>' +
+        '<div class="tab' + (OWNER_TAB === 'statements' ? ' on' : '') + '" data-tab="statements">Statements</div>' +
         '<div class="tab' + (OWNER_TAB === 'centre' ? ' on' : '') + '" data-tab="centre">Centre</div>' +
       '</div><div class="pad" id="ow"></div>';
     APP.querySelector('.tabs').onclick = function(e){ var t = e.target.closest('[data-tab]'); if (!t) return;
@@ -451,6 +455,8 @@ function pageOwner(note){
     else if (OWNER_TAB === 'shops') ownerShops(box, r, s, top);
     else if (OWNER_TAB === 'leases') ownerLeases(box, s, top);
     else if (OWNER_TAB === 'charges') ownerCharges(box, s, top);
+    else if (OWNER_TAB === 'billing') ownerBilling(box, s, top);
+    else if (OWNER_TAB === 'statements') ownerStatements(box, s, top);
     else ownerCentre(box, r, s, top);
   });
 }
@@ -964,6 +970,488 @@ function ownerCharges(box, s, top){
   });
 }
 
+// =====================================================================
+// e3 · BILLING RUN, INVOICES, STATEMENTS, PAYMENTS, PDFs
+// =====================================================================
+var MONTHS_LONG = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+function monthName(p){ var d = ymd(p); return MONTHS_LONG[d.getUTCMonth()] + ' ' + d.getUTCFullYear(); }
+function monthStart(s){ return String(s).slice(0,7) + '-01'; }
+function addMonths(p, n){ var d = ymd(p); d.setUTCDate(1); d.setUTCMonth(d.getUTCMonth() + n); return d.toISOString().slice(0,10); }
+function monthEnd(p){ return addDays(addMonths(p, 1), -1); }
+function r2(n){ return Math.round((+n + Number.EPSILON) * 100) / 100; }
+
+// the tenant's account: invoices (debits) and payments (credits) in date order, running balance,
+// and what is still unpaid by age (payments clear the oldest invoice first)
+function ledger(invoices, payments, today){
+  var rows = [];
+  invoices.forEach(function(i){ rows.push({ date: i.inv_date, kind: 'inv', ref: i.number, desc: i.status === 'void' ? 'Invoice (cancelled: ' + (i.void_reason || '') + ')' : 'Invoice ' + monthName(i.period),
+                                            debit: i.status === 'void' ? 0 : +i.total, credit: 0, inv: i }); });
+  payments.forEach(function(p){ rows.push({ date: p.paid_on, kind: 'pay', ref: p.reference || '', desc: 'Payment received', debit: 0, credit: +p.amount, pay: p }); });
+  rows.sort(function(a, b){ return a.date < b.date ? -1 : a.date > b.date ? 1 : (a.kind === 'inv' ? -1 : 1); });
+  var bal = 0; rows.forEach(function(r){ bal = r2(bal + r.debit - r.credit); r.balance = bal; });
+  var paid = payments.reduce(function(s, p){ return s + +p.amount; }, 0);
+  var age = { cur: 0, d30: 0, d60: 0, d90: 0 };
+  invoices.filter(function(i){ return i.status === 'sent'; }).sort(function(a, b){ return a.inv_date < b.inv_date ? -1 : 1; }).forEach(function(i){
+    var left = +i.total, take = Math.min(paid, left); paid -= take; left = r2(left - take);
+    if (left <= 0) return;
+    var d = daysTo(i.inv_date, today);
+    if (d >= 90) age.d90 += left; else if (d >= 60) age.d60 += left; else if (d >= 30) age.d30 += left; else age.cur += left;
+  });
+  Object.keys(age).forEach(function(k){ age[k] = r2(age[k]); });
+  return { rows: rows, balance: bal, age: age };
+}
+
+// ---------- PDFs (jsPDF, built on the phone, like the FeeApp) ----------
+var PDF = { W: 210, M: 16, grey: [107, 114, 128], ink: [17, 24, 39], brand: [20, 50, 92] };
+var pdfReady = null;
+function loadPdf(){
+  if (window.jspdf && window.jspdf.jsPDF && window.jspdf.jsPDF.API.autoTable) return Promise.resolve(true);
+  if (pdfReady) return pdfReady;
+  function add(src){ return new Promise(function(ok, no){ var s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = no; document.head.appendChild(s); }); }
+  pdfReady = add('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js')
+    .then(function(){ return add('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js'); })
+    .then(function(){ return true; }, function(){ pdfReady = null; return false; });
+  return pdfReady;
+}
+function pdfText(s){ return String(s == null ? '' : s).replace(/→/g, 'to').replace(/[‘’]/g, "'").replace(/[“”]/g, '"'); }
+function pdfHeader(doc, lh){
+  var W = PDF.W, M = PDF.M, y = M;
+  doc.setFont('helvetica', 'bold').setFontSize(14).setTextColor.apply(doc, PDF.ink); doc.text(pdfText(lh.legal_name || lh.name), M, y + 5);
+  doc.setFont('helvetica', 'normal').setFontSize(8.5).setTextColor.apply(doc, PDF.grey);
+  var lines = [lh.legal_name ? lh.name : '', lh.address, [lh.phone, lh.email].filter(Boolean).join(' · '),
+               lh.vat_registered && lh.vat_no ? 'VAT registration no. ' + lh.vat_no : ''].filter(Boolean);
+  lines.forEach(function(t, i){ doc.text(pdfText(t), M, y + 10 + i * 4); });
+  y += 12 + lines.length * 4;
+  doc.setDrawColor.apply(doc, PDF.brand); doc.setLineWidth(0.8); doc.line(M, y, W - M, y);
+  return y + 8;
+}
+function pdfFooter(doc, label){
+  var n = doc.getNumberOfPages();
+  for (var i = 1; i <= n; i++) { doc.setPage(i); doc.setFont('helvetica', 'normal').setFontSize(7.5).setTextColor.apply(doc, PDF.grey);
+    doc.text(pdfText(label), PDF.M, 290); doc.text('Page ' + i + ' of ' + n, PDF.W - PDF.M, 290, { align: 'right' }); }
+}
+function pdfBlock(doc, y, title, text){
+  if (!text) return y;
+  var CW = PDF.W - 2 * PDF.M;
+  if (y > 255) { doc.addPage(); y = PDF.M; }
+  doc.setFont('helvetica', 'bold').setFontSize(8.5).setTextColor.apply(doc, PDF.grey); doc.text(title, PDF.M, y); y += 4.5;
+  var lines = doc.splitTextToSize(pdfText(text), CW);
+  doc.setFont('helvetica', 'normal').setFontSize(9.5).setTextColor.apply(doc, PDF.ink); doc.text(lines, PDF.M, y);
+  return y + lines.length * 4.3 + 6;
+}
+function pdfRight(doc, label, val, yy){
+  doc.setFont('helvetica', 'normal').setFontSize(9).setTextColor.apply(doc, PDF.grey); doc.text(label, PDF.W - PDF.M - 62, yy);
+  doc.setFont('helvetica', 'bold').setTextColor.apply(doc, PDF.ink); doc.text(pdfText(val), PDF.W - PDF.M, yy, { align: 'right' });
+}
+var PDF_TABLE = { theme: 'plain', styles: { font: 'helvetica', fontSize: 9.5, textColor: PDF.ink, cellPadding: { top: 2, bottom: 2, left: 0, right: 1 },
+                  lineColor: [229, 231, 235], lineWidth: { bottom: 0.2 } },
+                  headStyles: { textColor: PDF.grey, fontSize: 8, fontStyle: 'bold', fillColor: false, lineWidth: { bottom: 0.4 }, lineColor: PDF.ink } };
+function invoiceFileName(inv, lh){ return ((lh.vat_registered ? 'Tax invoice ' : 'Invoice ') + (inv.number || 'draft') + ' - ' + inv.tenant_name).replace(/[\\/:*?"<>|]+/g, '-') + '.pdf'; }
+
+function buildInvoicePdf(inv, lh){
+  var jsPDF = window.jspdf.jsPDF, doc = new jsPDF({ unit: 'mm', format: 'a4' }), M = PDF.M, W = PDF.W, CW = W - 2 * M, cur = lh.currency;
+  var isTax = !!lh.vat_registered, y = pdfHeader(doc, lh);
+  doc.setFont('helvetica', 'bold').setFontSize(16).setTextColor.apply(doc, PDF.ink); doc.text(isTax ? 'TAX INVOICE' : 'INVOICE', M, y + 1);
+  if (inv.status === 'draft') { doc.setTextColor(180, 83, 9); doc.setFontSize(11); doc.text('DRAFT - not sent', M, y + 7); }
+  if (inv.status === 'void') { doc.setTextColor(163, 36, 27); doc.setFontSize(11); doc.text('CANCELLED: ' + pdfText(inv.void_reason || ''), M, y + 7); }
+  pdfRight(doc, 'Invoice number', inv.number || 'draft', y);
+  pdfRight(doc, 'Date', inv.inv_date ? niceY(inv.inv_date) : '-', y + 5);
+  pdfRight(doc, 'Period', monthName(inv.period), y + 10);
+  y += 20;
+  doc.setFont('helvetica', 'bold').setFontSize(8.5).setTextColor.apply(doc, PDF.grey); doc.text('INVOICE TO', M, y); y += 5;
+  doc.setFont('helvetica', 'normal').setFontSize(10.5).setTextColor.apply(doc, PDF.ink); doc.text(pdfText(inv.tenant_name), M, y); y += 5;
+  doc.setFontSize(9).setTextColor.apply(doc, PDF.grey); doc.text(pdfText(inv.unit_name + ' · ' + (lh.name || '')), M, y); y += 4.5;
+  if (inv.tenant_vat_no) { doc.text('VAT no. ' + pdfText(inv.tenant_vat_no), M, y); y += 4.5; }
+  y += 4;
+  doc.autoTable(Object.assign({}, PDF_TABLE, { startY: y, margin: { left: M, right: M },
+    head: [['Description', 'Amount excl. VAT', 'VAT', 'Amount']],
+    body: inv.lines.map(function(l){ return [pdfText(l.description), money(cur, +l.amount), +l.vat_rate ? money(cur, +l.vat) : '-', money(cur, +l.amount + +l.vat)]; }),
+    columnStyles: { 0: { cellWidth: 'auto' }, 1: { halign: 'right', cellWidth: 32 }, 2: { halign: 'right', cellWidth: 24 }, 3: { halign: 'right', cellWidth: 32 } },
+    didParseCell: function(d){ if (d.section === 'head' && d.column.index > 0) d.cell.styles.halign = 'right'; } }));
+  y = doc.lastAutoTable.finalY + 2;
+  var tot = isTax ? [['Subtotal (excl. VAT)', money(cur, +inv.subtotal)], ['VAT at 15%', money(cur, +inv.vat)], ['TOTAL DUE', money(cur, +inv.total)]]
+                  : [['TOTAL DUE', money(cur, +inv.total)]];
+  doc.autoTable(Object.assign({}, PDF_TABLE, { startY: y, margin: { left: M + CW * 0.45, right: M }, body: tot,
+    columnStyles: { 0: { cellWidth: 'auto' }, 1: { halign: 'right', cellWidth: 42 } },
+    didParseCell: function(d){ if (d.row.index === tot.length - 1) { d.cell.styles.fontStyle = 'bold'; d.cell.styles.fontSize = 11.5; d.cell.styles.lineWidth = { top: 0.5, bottom: 0 }; d.cell.styles.lineColor = PDF.ink; } } }));
+  y = doc.lastAutoTable.finalY + 10;
+  y = pdfBlock(doc, y, 'PAYMENT TERMS', lh.terms);
+  y = pdfBlock(doc, y, 'BANKING DETAILS', lh.bank ? lh.bank + (inv.number ? '\nPayment reference: ' + inv.number : '') : '');
+  pdfFooter(doc, (lh.legal_name || lh.name) + ' · ' + (isTax ? 'Tax invoice ' : 'Invoice ') + (inv.number || 'draft'));
+  return doc;
+}
+
+function buildStatementPdf(lease, L, lh, today){
+  var jsPDF = window.jspdf.jsPDF, doc = new jsPDF({ unit: 'mm', format: 'a4' }), M = PDF.M, W = PDF.W, cur = lh.currency, y = pdfHeader(doc, lh);
+  doc.setFont('helvetica', 'bold').setFontSize(16).setTextColor.apply(doc, PDF.ink); doc.text('STATEMENT', M, y + 1);
+  pdfRight(doc, 'Date', niceY(today), y);
+  pdfRight(doc, 'Amount due', money(cur, Math.max(0, L.balance)), y + 5);
+  y += 14;
+  doc.setFont('helvetica', 'bold').setFontSize(8.5).setTextColor.apply(doc, PDF.grey); doc.text('STATEMENT FOR', M, y); y += 5;
+  doc.setFont('helvetica', 'normal').setFontSize(10.5).setTextColor.apply(doc, PDF.ink); doc.text(pdfText(lease.tenant_name), M, y); y += 5;
+  doc.setFontSize(9).setTextColor.apply(doc, PDF.grey); doc.text(pdfText(lease.unit + ' · ' + (lh.name || '')), M, y); y += 8;
+  doc.autoTable(Object.assign({}, PDF_TABLE, { startY: y, margin: { left: M, right: M },
+    head: [['Date', 'Reference', 'Description', 'Debit', 'Credit', 'Balance']],
+    body: L.rows.map(function(r){ return [niceY(r.date), pdfText(r.ref), pdfText(r.desc), r.debit ? money(cur, r.debit) : '', r.credit ? money(cur, r.credit) : '', money(cur, r.balance)]; }),
+    columnStyles: { 0: { cellWidth: 24 }, 1: { cellWidth: 24 }, 2: { cellWidth: 'auto' }, 3: { halign: 'right', cellWidth: 26 }, 4: { halign: 'right', cellWidth: 26 }, 5: { halign: 'right', cellWidth: 28 } },
+    didParseCell: function(d){ if (d.section === 'head' && d.column.index > 2) d.cell.styles.halign = 'right'; } }));
+  y = doc.lastAutoTable.finalY + 6;
+  doc.autoTable(Object.assign({}, PDF_TABLE, { startY: y, margin: { left: M, right: M },
+    head: [['Current', '30 days', '60 days', '90 days and over', 'Amount due']],
+    body: [[money(cur, L.age.cur), money(cur, L.age.d30), money(cur, L.age.d60), money(cur, L.age.d90), money(cur, Math.max(0, L.balance))]],
+    styles: Object.assign({}, PDF_TABLE.styles, { halign: 'right' }),
+    didParseCell: function(d){ d.cell.styles.halign = 'right'; if (d.section === 'body' && d.column.index === 4) d.cell.styles.fontStyle = 'bold'; } }));
+  y = doc.lastAutoTable.finalY + 10;
+  if (L.balance < 0) y = pdfBlock(doc, y, 'IN CREDIT', 'Your account is in credit by ' + money(cur, -L.balance) + '.');
+  y = pdfBlock(doc, y, 'PAYMENT TERMS', lh.terms);
+  y = pdfBlock(doc, y, 'BANKING DETAILS', lh.bank ? lh.bank + '\nPayment reference: ' + lease.unit : '');
+  pdfFooter(doc, (lh.legal_name || lh.name) + ' · Statement ' + lease.tenant_name + ' · ' + niceY(today));
+  return doc;
+}
+
+// share on the phone (WhatsApp, email…) or download, like the FeeApp
+function pdfOut(doc, name, title, how, msgEl){
+  function say(t, err){ if (msgEl) { msgEl.className = 'msg ' + (err ? 'err' : 'ok'); msgEl.textContent = t; } }
+  var file = null;
+  try { file = new File([doc.output('blob')], name, { type: 'application/pdf' }); } catch (e) {}
+  if (how === 'share' && file && navigator.canShare && navigator.canShare({ files: [file] })) {
+    return navigator.share({ files: [file], title: title, text: title }).then(function(){ say('Sent.'); }, function(e){ if (!e || e.name !== 'AbortError') { doc.save(name); say('PDF downloaded. Attach it to your email or message.'); } });
+  }
+  doc.save(name); say(how === 'share' ? 'PDF downloaded. Attach it to your email or message.' : 'PDF downloaded.');
+  return Promise.resolve();
+}
+function withPdf(msgEl, fn){
+  if (msgEl) { msgEl.className = 'msg'; msgEl.textContent = 'Preparing the PDF…'; }
+  return loadPdf().then(function(ok){
+    if (!ok) { if (msgEl) { msgEl.className = 'msg err'; msgEl.textContent = 'The PDF maker did not load. Check the connection and try again.'; } return; }
+    return fn();
+  });
+}
+
+// ---------- the month's invoices, worked out from leases + charges + this month's bills and readings ----------
+function computeRun(D, lh, period, inp){
+  var p0 = period, p1 = monthEnd(period), dim = daysTo(p0, p1) + 1, T = mgmtTotals(D), cur = lh.currency;
+  var vatOn = !!lh.vat_registered, out = [], warn = [], warned = {};
+  var bills = {}; (inp.bills || []).forEach(function(b){ if (b.amount != null && b.amount !== '') bills[b.charge_id] = +b.amount; });
+  var reads = {}; (inp.readings || []).forEach(function(r){ reads[r.unit_id + '_' + r.charge_id] = r; });
+  D.units.forEach(function(u){
+    var l = T.leaseOf[u.id];
+    if (u.vacant || !l || l.start_on > p1) return;
+    var from = l.start_on > p0 ? l.start_on : p0, days = daysTo(from, p1) + 1, f = days / dim, part = f < 1 ? ' (' + days + ' of ' + dim + ' days)' : '';
+    var area = +u.area_m2 || 0, lines = [];
+    if (l.end_on && l.end_on < p0) warn.push(u.name + ': lease ended ' + niceY(l.end_on) + '; billed at the current rent until a new lease is saved.');
+    var rent = leaseCalc(l, u, from).rent * f;
+    lines.push({ description: 'Rent ' + monthName(p0) + part, amount: r2(rent), vat_rate: vatOn ? 15 : 0 });
+    D.charges.forEach(function(ct){
+      var row = chargeRow(D, u, ct); if (!row.enabled) return;
+      var m = row.method || ct.method, vr = vatOn && ct.vat ? 15 : 0;
+      if (m === 'metered' && !row.has_meter) m = 'share';
+      if (m === 'off') return;
+      if (m === 'fixed') { var a = (row.amount != null ? +row.amount : +ct.rate) * f; if (a) lines.push({ description: ct.name + part, amount: r2(a), vat_rate: vr }); return; }
+      if (m === 'per_m2') { if (!area) { warn.push(u.name + ': ' + ct.name + ' needs the m².'); return; }
+        if (+ct.rate) lines.push({ description: ct.name + ' (' + area + ' m² × ' + money(cur, +ct.rate) + ')' + part, amount: r2(area * ct.rate * f), vat_rate: vr }); return; }
+      if (m === 'share') {
+        if (!(ct.id in bills)) { if (!warned[ct.id]) { warn.push('No centre bill entered for ' + ct.name + ', so it is left off.'); warned[ct.id] = 1; } return; }
+        if (!area || !T.basis) { warn.push(u.name + ': ' + ct.name + ' needs the m².'); return; }
+        var pc = area / T.basis;
+        lines.push({ description: ct.name + ' (' + (Math.round(pc * 10000) / 100) + '% of ' + money(cur, bills[ct.id]) + ')', amount: r2(bills[ct.id] * pc), vat_rate: vr }); return; }
+      if (m === 'metered') {
+        var rd = reads[u.id + '_' + ct.id];
+        if (!rd || rd.curr == null || rd.curr === '' || rd.prev == null || rd.prev === '') { warn.push(u.name + ': no ' + ct.name.toLowerCase() + ' reading, so it is left off.'); return; }
+        var used = +rd.curr - +rd.prev;
+        if (used < 0) { warn.push(u.name + ': the ' + ct.name.toLowerCase() + ' reading is lower than last month; left off.'); return; }
+        lines.push({ description: ct.name + ' meter ' + (row.meter_no || '') + ': ' + rd.prev + ' to ' + rd.curr + ' = ' + r2(used) + ' × ' + money(cur, +ct.rate) + (+ct.basic ? ' + basic ' + money(cur, +ct.basic) : ''),
+                     amount: r2(used * ct.rate + +ct.basic), vat_rate: vr });
+      }
+    });
+    (inp.extras || []).forEach(function(x){ if (x.unit_id === u.id) lines.push({ description: x.description, amount: r2(+x.amount), vat_rate: vatOn && x.vat ? 15 : 0 }); });
+    out.push({ unit_id: u.id, lease_id: l.id, unit: u.name, tenant: l.tenant_name, lines: lines.filter(function(x){ return x.amount !== 0; }) });
+  });
+  return { invoices: out, warnings: warn };
+}
+
+var BILL_PERIOD = null, BILL_OPEN = null;
+function ownerBilling(box, s, top){
+  box.innerHTML = '<div class="loading">Loading…</div>';
+  rpc('ctr_mgmt_home', { p_centre: CID, p_code: s.code }).then(function(D){
+    if (!D.ok) { box.innerHTML = '<div class="msg err">' + esc(D.msg) + '</div>'; return; }
+    var thisMonth = monthStart(D.today);
+    var first = !BILL_PERIOD;
+    if (first) BILL_PERIOD = thisMonth;
+    rpc('ctr_billing_home', { p_centre: CID, p_code: s.code, p_period: BILL_PERIOD }).then(function(B){
+      if (!B.ok) { box.innerHTML = '<div class="msg err">' + esc(B.msg) + '</div>'; return; }
+      // first time in: open on the first month not yet sent (this month, or next month once this month is sent)
+      if (first && B.run && B.run.status === 'sent') { BILL_PERIOD = addMonths(thisMonth, 1); return ownerBilling(box, s, top); }
+      drawBilling(box, s, top, D, B);
+    });
+  });
+}
+
+function drawBilling(box, s, top, D, B){
+  var lh = B.letterhead, cur = lh.currency, run = B.run, sent = run && run.status === 'sent', period = B.period, T = mgmtTotals(D);
+  var inp = run ? run.inputs : { bills: [], readings: [], extras: [] };
+  inp.bills = inp.bills || []; inp.readings = inp.readings || []; inp.extras = inp.extras || [];
+  var lastRead = {}; B.last_readings.forEach(function(r){ lastRead[r.unit_id + '_' + r.charge_id] = r.curr; });
+  var billed = D.units.filter(function(u){ var l = T.leaseOf[u.id]; return !u.vacant && l && l.start_on <= monthEnd(period); });
+  // which charges need a centre bill, and which meters need a reading
+  var needBill = {}, meters = [];
+  billed.forEach(function(u){ D.charges.forEach(function(ct){
+    var row = chargeRow(D, u, ct); if (!row.enabled) return;
+    var m = row.method || ct.method;
+    if (m === 'metered' && row.has_meter) meters.push({ u: u, ct: ct, row: row });
+    else if (m === 'share' || m === 'metered') needBill[ct.id] = ct;
+  }); });
+  var months = []; for (var k = -3; k <= 2; k++) months.push(addMonths(monthStart(D.today), k));
+  if (months.indexOf(period) < 0) months.push(period);
+  var invs = B.invoices, totals = invs.filter(function(i){ return i.status !== 'void'; }).reduce(function(a, i){ a.s += +i.subtotal; a.v += +i.vat; a.t += +i.total; return a; }, { s: 0, v: 0, t: 0 });
+  var html = top +
+    '<div class="box"><label style="margin-top:0">Month to bill (rent in advance)</label><select id="blMonth">' +
+      months.map(function(p){ var r = B.runs.filter(function(x){ return x.period === p; })[0];
+        return '<option value="' + p + '"' + (p === period ? ' selected' : '') + '>' + monthName(p) + (r ? (r.status === 'sent' ? ' · sent' : ' · draft') : '') + '</option>'; }).join('') +
+    '</select><div class="hint">' + (sent ? 'Sent on ' + niceY(run.sent_at.slice(0,10)) + '. This month is closed.' : run && run.id ? 'Drafts made. Check them, then send.' : 'Nothing made for this month yet.') + '</div></div>';
+  if (!sent) {
+    html += '<div class="h3">1 · This month\'s bills to share</div>' +
+      (Object.keys(needBill).length ? '<div class="box">' + Object.keys(needBill).map(function(id){
+        var ct = needBill[id], b = inp.bills.filter(function(x){ return String(x.charge_id) === String(id); })[0];
+        return '<label>' + esc(ct.name) + ' · the centre\'s bill (' + cur + ', excl. VAT)' + (ct.method === 'metered' ? ' · shared only by shops without a meter' : '') +
+          '</label><input data-bill="' + id + '" inputmode="decimal" value="' + esc(b && b.amount != null ? b.amount : '') + '">';
+      }).join('') + '<div class="hint">Each shop pays its share by m² (' + (D.centre.share_basis === 'let' ? 'let m² only' : 'whole centre') + '). Leave empty to leave a charge off this month.</div></div>'
+      : '<div class="box empty">No shared bills this month.</div>') +
+      '<div class="h3">2 · Meter readings</div>' +
+      (meters.length ? '<div class="box">' + meters.map(function(x){
+        var key = x.u.id + '_' + x.ct.id, r = inp.readings.filter(function(y){ return y.unit_id === x.u.id && y.charge_id === x.ct.id; })[0];
+        var prev = r && r.prev != null ? r.prev : (key in lastRead ? lastRead[key] : '');
+        return '<div class="crow" data-read="' + key + '"><div class="nm">' + esc(x.u.name) + ' · ' + esc(x.ct.name) + (x.row.meter_no ? ' · ' + esc(x.row.meter_no) : '') + '</div>' +
+          '<div class="two"><div><label>Last reading</label><input data-prev inputmode="decimal" value="' + esc(prev) + '"></div>' +
+          '<div><label>This reading</label><input data-curr inputmode="decimal" value="' + esc(r && r.curr != null ? r.curr : '') + '"></div></div></div>';
+      }).join('') + '</div>' : '<div class="box empty">No meters.</div>') +
+      '<div class="h3">3 · Once-off lines</div><div class="box"><div id="blExtras">' +
+        (inp.extras.length ? inp.extras.map(function(x, i){ var u = D.units.filter(function(v){ return v.id === x.unit_id; })[0];
+          return '<div class="crow"><div class="hd"><span>' + esc(u ? u.name : '?') + ': ' + esc(x.description) + ' · ' + money(cur, +x.amount) + (x.vat ? ' + VAT' : '') + '</span>' +
+            '<span class="b sm no" data-xdel="' + i + '">Remove</span></div></div>'; }).join('') : '<div class="empty">None.</div>') +
+        '</div><label>Shop</label><select id="xU">' + billed.map(function(u){ return '<option value="' + u.id + '">' + esc(u.name) + '</option>'; }).join('') + '</select>' +
+        '<div class="two"><div><label>Description</label><input id="xD" maxlength="80" placeholder="e.g. Key replacement"></div><div><label>Amount (' + cur + ', excl. VAT)</label><input id="xA" inputmode="decimal"></div></div>' +
+        '<label class="chk" style="margin-top:10px"><input type="checkbox" id="xV" checked> Add VAT</label>' +
+        '<div class="btns"><div class="b sm" id="xAdd">Add line</div></div></div>' +
+      '<div class="b main wide" id="blMake">' + (run && run.id ? 'Make the drafts again' : 'Make draft invoices') + '</div><div class="msg" id="blMsg"></div><div id="blWarn"></div>';
+  }
+  if (invs.length) {
+    html += '<div class="h3">' + (sent ? 'Invoices sent' : 'Draft invoices') + ' · ' + invs.length + '</div>' +
+      '<div class="tiles"><div class="tile"><div class="k">Excl. VAT</div><div class="v">' + money(cur, totals.s) + '</div></div>' +
+      '<div class="tile"><div class="k">Total incl. VAT</div><div class="v">' + money(cur, totals.t) + '</div><div class="s">VAT ' + money(cur, totals.v) + '</div></div></div>' +
+      invs.map(function(i){
+        return '<div class="item rr" data-inv="' + i.id + '"><div class="top" data-iopen="' + i.id + '"><div><div class="ti">' + esc(i.unit_name) + '</div>' +
+          '<div class="mt">' + esc(i.tenant_name) + (i.number ? ' · ' + esc(i.number) : '') + '</div></div><div style="text-align:right"><div class="amt">' + money(cur, +i.total) + '</div>' +
+          (i.status === 'void' ? '<span class="st rejected">Cancelled</span>' : i.status === 'sent' ? '<span class="st approved">Sent</span>' : '<span class="st pending">Draft</span>') + '</div></div>' +
+          (BILL_OPEN === i.id ? '<div class="box" style="margin-top:10px;cursor:default" data-icard>' + i.lines.map(function(l){
+              return '<div class="crow"><div class="hd"><span style="font-size:13px">' + esc(l.description) + '</span><b style="white-space:nowrap">' + money(cur, +l.amount) + '</b></div>' +
+                (+l.vat_rate ? '<div class="est">+ VAT ' + money(cur, +l.vat) + '</div>' : '<div class="est">no VAT</div>') + '</div>'; }).join('') +
+            '<div class="crow"><div class="hd"><b>Total incl. VAT</b><b>' + money(cur, +i.total) + '</b></div></div>' +
+            '<div class="btns"><div class="b sm main" data-ipdf="share">' + (i.status === 'draft' ? 'Draft PDF' : 'Send PDF') + '</div><div class="b sm" data-ipdf="save">Download</div>' +
+            (i.status === 'sent' ? '<div class="b sm no" data-ivoid>Cancel invoice</div>' : '') + '</div><div class="slot"></div><div class="msg" data-im></div></div>' : '') +
+        '</div>';
+      }).join('');
+    if (!sent) html += '<div class="b ok wide" id="blSend">Send all ' + invs.length + ' invoices</div><div class="slot" id="blSendSlot"></div>';
+  }
+  html += '<details class="box" style="margin-top:18px"><summary style="font-weight:700;cursor:pointer">Invoice settings (letterhead, bank, numbering)</summary>' +
+    '<label>Company name on invoices</label><input id="bsLegal" maxlength="100" value="' + esc(lh.legal_name || '') + '" placeholder="e.g. Sample Centre Properties (Pty) Ltd">' +
+    '<label>Email</label><input id="bsEmail" maxlength="120" value="' + esc(lh.email || '') + '">' +
+    '<label>Banking details</label><textarea id="bsBank" maxlength="400">' + esc(lh.bank || '') + '</textarea>' +
+    '<label>Payment terms</label><textarea id="bsTerms" maxlength="400">' + esc(lh.terms || '') + '</textarea>' +
+    '<div class="two"><div><label>Number starts with</label><input id="bsPrefix" maxlength="10" value="' + esc(lh.inv_prefix || '') + '"></div>' +
+    '<div><label>Next number</label><input id="bsNext" inputmode="numeric" value="' + esc(lh.inv_next) + '"></div></div>' +
+    '<label class="chk" style="margin-top:12px"><input type="checkbox" id="bsVat"' + (lh.vat_registered ? ' checked' : '') + '> VAT registered (15%): TAX INVOICE</label>' +
+    '<div class="hint">The VAT number, address and phone are on the Charges and Centre tabs.</div>' +
+    '<div class="b main wide" id="bsSave">Save invoice settings</div><div class="msg" id="bsMsg"></div></details>' +
+    '<div class="b wide" id="out">Log out</div>';
+  box.innerHTML = html;
+
+  function readInputs(){
+    var o = { bills: [], readings: [], extras: inp.extras.slice() }, bad = null;
+    box.querySelectorAll('[data-bill]').forEach(function(el){ var v = toNum(el.value); if (v != null && (isNaN(v) || v < 0)) bad = 'A bill amount is not a number.'; if (v != null) o.bills.push({ charge_id: Number(el.getAttribute('data-bill')), amount: v }); });
+    box.querySelectorAll('[data-read]').forEach(function(el){ var k = el.getAttribute('data-read').split('_'), pv = toNum(el.querySelector('[data-prev]').value), cv = toNum(el.querySelector('[data-curr]').value);
+      if ((pv != null && isNaN(pv)) || (cv != null && isNaN(cv))) bad = 'A meter reading is not a number.';
+      o.readings.push({ unit_id: Number(k[0]), charge_id: Number(k[1]), prev: pv, curr: cv }); });
+    return bad ? { bad: bad } : o;
+  }
+  var mon = $('blMonth'); if (mon) mon.onchange = function(){ BILL_PERIOD = mon.value; BILL_OPEN = null; ownerBilling(box, s, ''); };
+  var xa = $('xAdd'); if (xa) xa.onclick = function(){
+    var a = toNum($('xA').value), d = $('xD').value.trim();
+    if (!d || a == null || isNaN(a)) { $('blMsg').className = 'msg err'; $('blMsg').textContent = 'Fill in the description and amount of the once-off line.'; return; }
+    inp.extras.push({ unit_id: Number($('xU').value), description: d, amount: a, vat: $('xV').checked });
+    var keep = readInputs(); if (!keep.bad) { inp.bills = keep.bills; inp.readings = keep.readings; }
+    drawBilling(box, s, '', D, Object.assign({}, B, { run: Object.assign({}, run || { status: 'draft' }, { inputs: inp }) }));
+  };
+  box.querySelectorAll('[data-xdel]').forEach(function(el){ el.onclick = function(){
+    inp.extras.splice(Number(el.getAttribute('data-xdel')), 1);
+    var keep = readInputs(); if (!keep.bad) { inp.bills = keep.bills; inp.readings = keep.readings; }
+    drawBilling(box, s, '', D, Object.assign({}, B, { run: Object.assign({}, run || { status: 'draft' }, { inputs: inp }) }));
+  }; });
+  var mk = $('blMake'); if (mk) mk.onclick = function(){
+    var m = $('blMsg'), o = readInputs();
+    if (o.bad) { m.className = 'msg err'; m.textContent = o.bad; return; }
+    var c = computeRun(D, lh, period, o);
+    if (!c.invoices.length) { m.className = 'msg err'; m.textContent = 'There are no leases to bill for ' + monthName(period) + '.'; return; }
+    m.className = 'msg'; m.textContent = 'Making ' + c.invoices.length + ' draft invoices…';
+    rpc('ctr_run_save', { p_centre: CID, p_code: s.code, p_period: period, p_inputs: o,
+        p_invoices: c.invoices.map(function(i){ return { unit_id: i.unit_id, lease_id: i.lease_id, lines: i.lines }; }) }).then(function(x){
+      if (!x.ok) { m.className = 'msg err'; m.textContent = x.msg; return; }
+      BILL_OPEN = null;
+      ownerBilling(box, s, '<div class="msg ok">' + x.drafts + ' draft invoices made for ' + monthName(period) + '. Check them below, then send.</div>' +
+        (c.warnings.length ? '<div class="ask" style="margin-top:10px"><b>Please check:</b><br>' + c.warnings.map(esc).join('<br>') + '</div>' : ''));
+    });
+  };
+  var sd = $('blSend'); if (sd) sd.onclick = function(){
+    var slot = $('blSendSlot');
+    slot.innerHTML = '<div class="ask">Send all ' + invs.length + ' invoices for ' + monthName(period) + '? They get their numbers and can no longer be changed.' +
+      '<label style="color:inherit">Invoice date</label><input type="date" data-d value="' + period + '">' +
+      '<div class="btns"><div class="b sm ok" data-y>Yes, send them</div><div class="b sm" data-n>No</div></div><div class="msg" data-m></div></div>';
+    slot.querySelector('[data-n]').onclick = function(){ slot.innerHTML = ''; };
+    slot.querySelector('[data-y]').onclick = function(){
+      rpc('ctr_run_send', { p_centre: CID, p_code: s.code, p_period: period, p_inv_date: slot.querySelector('[data-d]').value || null }).then(function(x){
+        if (!x.ok) { var mm = slot.querySelector('[data-m]'); mm.className = 'msg err'; mm.textContent = x.msg; return; }
+        BILL_OPEN = null;
+        ownerBilling(box, s, '<div class="msg ok">' + x.sent + ' invoices sent and numbered. Tap one to send its PDF; tenants also see them on My shop.</div>');
+      });
+    };
+  };
+  box.querySelectorAll('[data-iopen]').forEach(function(el){ el.onclick = function(){
+    var id = Number(el.getAttribute('data-iopen')); BILL_OPEN = BILL_OPEN === id ? null : id; drawBilling(box, s, top, D, B);
+  }; });
+  var card = box.querySelector('[data-icard]');
+  if (card) {
+    var inv = invs.filter(function(i){ return i.id === BILL_OPEN; })[0], im = card.querySelector('[data-im]');
+    card.querySelectorAll('[data-ipdf]').forEach(function(b){ b.onclick = function(){
+      withPdf(im, function(){ return pdfOut(buildInvoicePdf(inv, lh), invoiceFileName(inv, lh), (lh.vat_registered ? 'Tax invoice ' : 'Invoice ') + (inv.number || 'draft'), b.getAttribute('data-ipdf'), im); });
+    }; });
+    var vd = card.querySelector('[data-ivoid]');
+    if (vd) vd.onclick = function(){
+      var slot = card.querySelector('.slot');
+      slot.innerHTML = '<div class="ask">Cancel invoice ' + esc(inv.number) + '? It stays on record as cancelled and comes off the tenant\'s statement.' +
+        '<input data-why maxlength="200" style="margin-top:8px" placeholder="Reason, e.g. wrong rent">' +
+        '<div class="btns"><div class="b sm no" data-y>Yes, cancel it</div><div class="b sm" data-n>No</div></div><div class="msg" data-m></div></div>';
+      slot.querySelector('[data-n]').onclick = function(){ slot.innerHTML = ''; };
+      slot.querySelector('[data-y]').onclick = function(){
+        rpc('ctr_invoice_void', { p_centre: CID, p_code: s.code, p_id: inv.id, p_reason: slot.querySelector('[data-why]').value }).then(function(x){
+          if (!x.ok) { var mm = slot.querySelector('[data-m]'); mm.className = 'msg err'; mm.textContent = x.msg; return; }
+          ownerBilling(box, s, '<div class="msg ok">Invoice ' + esc(inv.number) + ' cancelled.</div>');
+        });
+      };
+    };
+  }
+  $('bsSave').onclick = function(){
+    var m = $('bsMsg'); m.className = 'msg'; m.textContent = 'Saving…';
+    rpc('ctr_billing_settings_save', { p_centre: CID, p_code: s.code, p: { legal_name: $('bsLegal').value, email: $('bsEmail').value, bank: $('bsBank').value,
+        terms: $('bsTerms').value, inv_prefix: $('bsPrefix').value.trim(), inv_next: $('bsNext').value, vat_registered: $('bsVat').checked } }).then(function(x){
+      if (!x.ok) { m.className = 'msg err'; m.textContent = x.msg; return; }
+      m.className = 'msg ok'; m.textContent = 'Invoice settings saved.';
+    });
+  };
+  $('out').onclick = function(){ setSess(null); bar(); go('#'); };
+}
+
+// ---------- statements and payments ----------
+var ST_OPEN = null;
+function ownerStatements(box, s, top){
+  box.innerHTML = '<div class="loading">Loading…</div>';
+  rpc('ctr_statements_home', { p_centre: CID, p_code: s.code }).then(function(S){
+    if (!S.ok) { box.innerHTML = '<div class="msg err">' + esc(S.msg) + '</div>'; return; }
+    var lh = S.letterhead, cur = lh.currency, today = S.today, owed = 0, over30 = 0, over90 = 0;
+    var rows = S.leases.map(function(l){
+      var L = ledger(S.invoices.filter(function(i){ return i.lease_id === l.id; }), S.payments.filter(function(p){ return p.lease_id === l.id; }), today);
+      owed += Math.max(0, L.balance); over30 += L.age.d30 + L.age.d60 + L.age.d90; over90 += L.age.d90;
+      return { l: l, L: L };
+    });
+    box.innerHTML = top +
+      '<div class="tiles"><div class="tile"><div class="k">Owed to the centre</div><div class="v">' + money(cur, owed) + '</div></div>' +
+      '<div class="tile"><div class="k">30 days and older</div><div class="v">' + money(cur, r2(over30)) + '</div><div class="s">' + money(cur, r2(over90)) + ' is 90+ days</div></div></div>' +
+      '<div class="h3">Tenants</div>' +
+      rows.map(function(x){
+        var l = x.l, L = x.L, pill = L.balance > 0.004 ? (L.age.d30 + L.age.d60 + L.age.d90 > 0 ? '<span class="st rejected">Behind</span>' : '<span class="st pending">Owes</span>')
+                                 : L.balance < -0.004 ? '<span class="st approved">In credit</span>' : '<span class="st approved">Paid up</span>';
+        return '<div class="item rr" data-st="' + l.id + '"><div class="top" data-sopen="' + l.id + '"><div><div class="ti">' + esc(l.unit) + (l.ended_on ? ' (left)' : '') + '</div>' +
+          '<div class="mt">' + esc(l.tenant_name) + '</div>' +
+          (L.age.d30 + L.age.d60 + L.age.d90 > 0 ? '<div class="mt">30d ' + money(cur, L.age.d30) + ' · 60d ' + money(cur, L.age.d60) + ' · 90d+ ' + money(cur, L.age.d90) + '</div>' : '') +
+          '</div><div style="text-align:right"><div class="amt">' + money(cur, L.balance) + '</div>' + pill + '</div></div>' +
+          (ST_OPEN === l.id ? stCard(l, L, cur, today) : '') + '</div>';
+      }).join('') +
+      '<div class="b wide" id="out">Log out</div>';
+    box.querySelectorAll('[data-sopen]').forEach(function(el){ el.onclick = function(){
+      var id = Number(el.getAttribute('data-sopen')); ST_OPEN = ST_OPEN === id ? null : id; ownerStatements(box, s, '');
+    }; });
+    var card = box.querySelector('[data-scard]');
+    if (card) {
+      var x = rows.filter(function(r){ return r.l.id === ST_OPEN; })[0], sm = card.querySelector('[data-sm]');
+      card.querySelectorAll('[data-spdf]').forEach(function(b){ b.onclick = function(){
+        withPdf(sm, function(){ return pdfOut(buildStatementPdf(x.l, x.L, lh, today), ('Statement ' + x.l.tenant_name + ' ' + today).replace(/[\\/:*?"<>|]+/g, '-') + '.pdf',
+                                              'Statement ' + x.l.tenant_name, b.getAttribute('data-spdf'), sm); });
+      }; });
+      card.querySelectorAll('[data-rinv]').forEach(function(b){ b.onclick = function(){
+        var inv = S.invoices.filter(function(i){ return i.id === Number(b.getAttribute('data-rinv')); })[0];
+        withPdf(sm, function(){ return pdfOut(buildInvoicePdf(inv, lh), invoiceFileName(inv, lh), 'Invoice ' + inv.number, 'share', sm); });
+      }; });
+      card.querySelector('[data-padd]').onclick = function(){
+        var a = toNum(card.querySelector('[data-pa]').value);
+        if (a == null || isNaN(a)) { sm.className = 'msg err'; sm.textContent = 'Fill in the amount received.'; return; }
+        rpc('ctr_payment_add', { p_centre: CID, p_code: s.code, p_lease: x.l.id, p_paid_on: card.querySelector('[data-pd]').value || null, p_amount: a,
+            p_reference: card.querySelector('[data-pr]').value, p_note: null }).then(function(r){
+          if (!r.ok) { sm.className = 'msg err'; sm.textContent = r.msg; return; }
+          ownerStatements(box, s, '<div class="msg ok">Payment of ' + money(cur, a) + ' recorded for ' + esc(x.l.unit) + '.</div>');
+        });
+      };
+      card.querySelectorAll('[data-pdel]').forEach(function(b){ b.onclick = function(){
+        var pid = Number(b.getAttribute('data-pdel'));
+        askIn(card.querySelector('.slot'), 'Remove this payment?', 'Yes, remove it', function(){
+          return rpc('ctr_payment_remove', { p_centre: CID, p_code: s.code, p_id: pid }).then(function(r){ if (r.ok) ownerStatements(box, s, '<div class="msg ok">Payment removed.</div>'); return r; });
+        });
+      }; });
+    }
+    $('out').onclick = function(){ setSess(null); bar(); go('#'); };
+  });
+}
+function stCard(l, L, cur, today){
+  return '<div class="box" style="margin-top:10px;cursor:default" data-scard>' +
+    (L.rows.length ? L.rows.map(function(r){
+      return '<div class="crow"><div class="hd"><span style="font-size:13px">' + niceY(r.date) + ' · ' + esc(r.desc) + (r.ref ? ' · ' + esc(r.ref) : '') + '</span>' +
+        '<b style="white-space:nowrap">' + (r.debit ? money(cur, r.debit) : r.credit ? '−' + money(cur, r.credit) : '') + '</b></div>' +
+        '<div class="est">Balance ' + money(cur, r.balance) +
+        (r.kind === 'inv' && r.inv.status === 'sent' ? ' · <span class="lnk" data-rinv="' + r.inv.id + '" style="color:var(--brand);font-weight:600;cursor:pointer">invoice PDF</span>' : '') +
+        (r.kind === 'pay' ? ' · <span data-pdel="' + r.pay.id + '" style="color:var(--bad);font-weight:600;cursor:pointer">remove</span>' : '') + '</div></div>';
+    }).join('') : '<div class="empty">No invoices or payments yet.</div>') +
+    '<div class="slot"></div>' +
+    '<div class="btns"><div class="b sm main" data-spdf="share">Send statement PDF</div><div class="b sm" data-spdf="save">Download</div></div>' +
+    '<div class="sub">Record a payment</div>' +
+    '<div class="two"><div><label>Received on</label><input type="date" data-pd value="' + today + '"></div><div><label>Amount (' + cur + ')</label><input data-pa inputmode="decimal"></div></div>' +
+    '<label>Reference</label><input data-pr maxlength="60" placeholder="e.g. EFT ' + esc(l.unit) + '">' +
+    '<div class="btns"><div class="b sm ok" data-padd>Record payment</div></div><div class="msg" data-sm></div></div>';
+}
+
+// ---------- tenant: My account on My shop (Block 1) ----------
+function shopAccount(el, s){
+  rpc('ctr_shop_account', { p_centre: CID, p_code: s.code }).then(function(A){
+    if (!A || !A.ok || !A.lease) { el.innerHTML = ''; return; }
+    var lh = A.letterhead, cur = lh.currency, L = ledger(A.invoices, A.payments, A.today);
+    el.innerHTML = '<div class="h3">My account</div><div class="box">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center"><div><div class="hint" style="margin:0">' + (L.balance < 0 ? 'In credit' : 'Balance due') + '</div>' +
+      '<div style="font-size:22px;font-weight:800">' + money(cur, Math.abs(L.balance)) + '</div></div>' +
+      '<div class="b sm main" data-acst>Statement PDF</div></div>' +
+      (L.age.d30 + L.age.d60 + L.age.d90 > 0 ? '<div class="msg err" style="margin-top:10px">' + money(cur, r2(L.age.d30 + L.age.d60 + L.age.d90)) + ' is 30 days or older.</div>' : '') +
+      (A.invoices.length ? A.invoices.slice().reverse().slice(0, 6).map(function(i){
+        return '<div class="crow"><div class="hd"><span><b>' + esc(i.number) + '</b> · ' + monthName(i.period) + '</span><b>' + money(cur, +i.total) + '</b></div>' +
+          '<div class="est"><span data-acinv="' + i.id + '" style="color:var(--brand);font-weight:600;cursor:pointer">Invoice PDF</span></div></div>'; }).join('')
+        : '<div class="empty" style="margin-top:8px">No invoices yet.</div>') +
+      '<div class="msg" data-acm></div></div>';
+    var m = el.querySelector('[data-acm]'), lease = { tenant_name: A.lease.tenant_name, unit: A.lease.unit };
+    el.querySelector('[data-acst]').onclick = function(){
+      withPdf(m, function(){ return pdfOut(buildStatementPdf(lease, L, lh, A.today), ('Statement ' + lease.tenant_name + ' ' + A.today).replace(/[\\/:*?"<>|]+/g, '-') + '.pdf', 'Statement', 'share', m); });
+    };
+    el.querySelectorAll('[data-acinv]').forEach(function(b){ b.onclick = function(){
+      var inv = A.invoices.filter(function(i){ return i.id === Number(b.getAttribute('data-acinv')); })[0];
+      withPdf(m, function(){ return pdfOut(buildInvoicePdf(inv, lh), invoiceFileName(inv, lh), 'Invoice ' + inv.number, 'share', m); });
+    }; });
+  });
+}
+
 // ---------- router ----------
 function route(){
   var h = location.hash.replace(/^#/, '');
@@ -977,10 +1465,14 @@ function route(){
     return;
   }
   bar();
+  if (MODE === 'office') {           // Block 2: the centre office only
+    document.title = 'ESM Office';
+    if (h === 'login/owner') return pageLogin('owner');
+    OWNER_TAB = OWNER_TAB || 'approve'; return pageOwner();
+  }
+  if (h === 'login/owner' || h === 'owner') { go('#'); return; }   // Block 1 has no owner login
   if (h === 'login/shop') return pageLogin('shop');
-  if (h === 'login/owner') return pageLogin('owner');
   if (h === 'myshop') return pageMyShop();
-  if (h === 'owner') { OWNER_TAB = 'approve'; return pageOwner(); }
   APP.innerHTML = '<div class="loading">Loading…</div>';
   loadDoor().then(function(d){
     if (!d || !d.ok) { APP.innerHTML = '<div class="pad"><div class="msg err">' + esc(d ? d.msg : 'Could not load.') + '</div></div>'; return; }
