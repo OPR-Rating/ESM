@@ -30,7 +30,7 @@ a{color:inherit}
 
 /* SMALL HEADER (inner pages) */
 .mini{background:var(--brand);color:#fff;padding:12px 16px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:5}
-.mini .back{background:rgba(255,255,255,.15);border:0;color:#fff;border-radius:10px;padding:7px 12px;font-weight:600;cursor:pointer}
+.mini .back{background:rgba(255,255,255,.15);border:0;color:#fff;border-radius:10px;padding:7px 12px;font-weight:600;cursor:pointer;white-space:nowrap;flex:0 0 auto}
 .mini .t{font-weight:700;font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 /* TWO SQUARES */
@@ -116,6 +116,34 @@ textarea{min-height:70px;resize:vertical}
 .cnt{display:inline-block;min-width:18px;padding:0 5px;margin-left:4px;border-radius:999px;background:var(--accent);color:var(--accentInk);font-size:11px;text-align:center}
 .cats{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin-top:10px}
 .cats::-webkit-scrollbar{display:none}
+/* e2: leases and charges */
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 12px}
+.tile .k{font-size:11px;color:var(--quiet);text-transform:uppercase;letter-spacing:.04em}
+.tile .v{font-size:18px;font-weight:800;margin-top:3px}
+.tile .s{font-size:12px;color:var(--quiet);margin-top:1px}
+.att{display:flex;gap:8px;align-items:flex-start;font-size:14px;padding:8px 0;border-top:1px solid var(--line);cursor:pointer}
+.att:first-child{border-top:0}
+.dot{flex:0 0 8px;height:8px;border-radius:50%;margin-top:6px}
+.dot.red{background:var(--bad)} .dot.amber{background:#d99a00} .dot.grey{background:#98a2b3}
+.rr{cursor:pointer}
+.rr .top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.rr .amt{font-weight:800;white-space:nowrap}
+.st.empty{background:#eceff4;color:var(--quiet)}
+.sub{font-size:13px;font-weight:700;color:var(--brand);margin:16px 0 2px;text-transform:uppercase;letter-spacing:.04em}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.two label{margin-top:12px}
+.two > div{min-width:0}
+.two input,.two select{min-width:0;max-width:100%}
+input[type=date]{-webkit-appearance:none;appearance:none;min-height:44px}
+.crow{border-top:1px solid var(--line);padding:10px 0}
+.crow:first-of-type{border-top:0}
+.crow .hd{display:flex;align-items:center;gap:10px;justify-content:space-between}
+.crow .nm{font-weight:700;font-size:14px}
+.crow .est{font-size:12px;color:var(--quiet);margin-top:4px}
+.chk{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;margin:0;white-space:nowrap}
+.chk input{width:20px;height:20px;accent-color:var(--brand)}
+.crow select,.crow input[type=text]{margin-top:6px;font-size:15px;padding:8px 10px}
 .empty{font-size:14px;color:var(--quiet);padding:6px 2px}
 .info{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:14px}
 .info b{color:var(--quiet);font-weight:600}
@@ -139,7 +167,7 @@ textarea{min-height:70px;resize:vertical}
 <script>
 (function(){
 'use strict';
-var ESM_BUILD = 'ESM e1';
+var ESM_BUILD = 'ESM e2';
 var SB_URL = 'https://pqduivcxwykcixqsfrwi.supabase.co';
 var SB_KEY = 'sb_publishable_Cl8uDRrLqx9VMaC3lifpWA_Wl91vVy2';   // OTR-Tennis public (publishable) key
 var CATS = ['Food','Fashion','Health','Services','Fuel & car','Other'];
@@ -411,6 +439,8 @@ function pageOwner(note){
       '<div class="tabs">' +
         '<div class="tab' + (OWNER_TAB === 'approve' ? ' on' : '') + '" data-tab="approve">To approve' + (r.pending.length ? '<span class="cnt">' + r.pending.length + '</span>' : '') + '</div>' +
         '<div class="tab' + (OWNER_TAB === 'shops' ? ' on' : '') + '" data-tab="shops">Shops</div>' +
+        '<div class="tab' + (OWNER_TAB === 'leases' ? ' on' : '') + '" data-tab="leases">Leases</div>' +
+        '<div class="tab' + (OWNER_TAB === 'charges' ? ' on' : '') + '" data-tab="charges">Charges</div>' +
         '<div class="tab' + (OWNER_TAB === 'centre' ? ' on' : '') + '" data-tab="centre">Centre</div>' +
       '</div><div class="pad" id="ow"></div>';
     APP.querySelector('.tabs').onclick = function(e){ var t = e.target.closest('[data-tab]'); if (!t) return;
@@ -419,6 +449,8 @@ function pageOwner(note){
     var top = note ? '<div class="msg ok">' + esc(note) + '</div>' : '';
     if (OWNER_TAB === 'approve') ownerApprove(box, r, s, top);
     else if (OWNER_TAB === 'shops') ownerShops(box, r, s, top);
+    else if (OWNER_TAB === 'leases') ownerLeases(box, s, top);
+    else if (OWNER_TAB === 'charges') ownerCharges(box, s, top);
     else ownerCentre(box, r, s, top);
   });
 }
@@ -547,6 +579,389 @@ function ownerCentre(box, r, s, top){
     });
   };
   $('out').onclick = function(){ setSess(null); bar(); go('#'); };
+}
+
+// =====================================================================
+// e2 · LEASES AND CHARGES (owner only)
+// =====================================================================
+var MGMT_OPEN = null;      // the unit whose card is open on the Leases tab
+var METHODS = { fixed:'Fixed amount', per_m2:'Rate per m²', share:'Share by area', metered:'Metered', off:'Off' };
+
+function money(cur, n){
+  if (n == null || isNaN(n)) return '—';
+  var neg = n < 0, p = Math.abs(Math.round(n * 100) / 100).toFixed(2).split('.');
+  return (neg ? '-' : '') + cur + ' ' + p[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + '.' + p[1];
+}
+function niceY(s){ var d = ymd(s); return d.getUTCDate() + ' ' + MONTHS[d.getUTCMonth()] + ' ' + d.getUTCFullYear(); }
+function numStr(n){ return n == null ? '' : String(+n); }
+function m2s(n){ return n == null || n === '' ? '— m²' : String(+n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' m²'; }
+function daysTo(a, b){ return Math.round((ymd(b) - ymd(a)) / 864e5); }
+function addYears(s, n){ var d = ymd(s); d.setUTCFullYear(d.getUTCFullYear() + n); return d.toISOString().slice(0,10); }
+function fullYears(a, b){ if (b < a) return 0; var y = +b.slice(0,4) - +a.slice(0,4); if (b.slice(5) < a.slice(5)) y--; return Math.max(0, y); }
+function toNum(v){ v = String(v == null ? '' : v).replace(/\s/g, '').replace(',', '.'); return v === '' ? null : Number(v); }
+
+// rent now (after the yearly increases), the next increase, and the lease's state
+function leaseCalc(l, u, today){
+  var pct = +l.increase_pct || 0;
+  var base = l.rent_basis === 'm2' ? (+l.rent_value) * (+u.area_m2 || 0) : +l.rent_value;
+  var yrs = l.start_on > today ? 0 : fullYears(l.start_on, today);
+  var rent = Math.round(base * Math.pow(1 + pct / 100, yrs) * 100) / 100;
+  var next = pct > 0 ? addYears(l.start_on, yrs + 1) : null;
+  var c = { rent: rent, next: next, nextRent: Math.round(rent * (1 + pct / 100) * 100) / 100,
+            toNext: next ? daysTo(today, next) : null, toEnd: l.end_on ? daysTo(today, l.end_on) : null };
+  c.state = l.start_on > today ? 'starts' : (l.end_on && l.end_on < today) ? 'past' : (c.toEnd != null && c.toEnd <= 90) ? 'ending' : 'running';
+  return c;
+}
+function leasePill(c, l){
+  if (c.state === 'past') return '<span class="st rejected">Past its end</span>';
+  if (c.state === 'ending') return '<span class="st pending">Ends in ' + c.toEnd + ' days</span>';
+  if (c.state === 'starts') return '<span class="st ended">Starts ' + niceY(l.start_on) + '</span>';
+  return '<span class="st approved">Running</span>';
+}
+
+function mgmtTotals(D){
+  var leaseOf = {}; D.leases.forEach(function(l){ leaseOf[l.unit_id] = l; });
+  var all = 0, let_ = 0;
+  D.units.forEach(function(u){ var a = +u.area_m2 || 0; all += a; if (!u.vacant && leaseOf[u.id]) let_ += a; });
+  return { leaseOf: leaseOf, all: all, let_: let_, basis: D.centre.share_basis === 'let' ? let_ : all };
+}
+
+// what one charge comes to for one shop each month (or how it will be worked out)
+function chargeRow(D, u, ct){
+  var r = D.unit_charges.filter(function(x){ return x.unit_id === u.id && x.charge_id === ct.id; })[0];
+  return r || { enabled: ct.method !== 'off', method: null, amount: null, has_meter: false, meter_no: null, _new: true };
+}
+function chargeEst(D, u, ct, row, T){
+  var cur = D.centre.currency, vat = ct.vat ? ' + VAT' : '';
+  if (!row.enabled) return 'Off for this shop';
+  var m = row.method || ct.method, area = +u.area_m2 || 0;
+  function share(){ return T.basis > 0 && area > 0 ? (Math.round(area / T.basis * 10000) / 100) + '% of the centre\'s bill each month' + vat : 'Share by area: fill in the m² first'; }
+  if (m === 'off') return 'Off';
+  if (m === 'fixed') return money(cur, row.amount != null ? +row.amount : +ct.rate) + ' a month' + vat;
+  if (m === 'per_m2') return area ? m2s(area) + ' × ' + money(cur, +ct.rate) + ' = ' + money(cur, area * ct.rate) + ' a month' + vat : 'Rate per m²: fill in the m² first';
+  if (m === 'share') return share();
+  if (m === 'metered') return row.has_meter
+    ? 'Meter ' + esc(row.meter_no || '') + ': units used × ' + money(cur, +ct.rate) + (+ct.basic ? ' + basic ' + money(cur, +ct.basic) : '') + vat
+    : 'No meter, so ' + share();
+  return '';
+}
+
+function ownerLeases(box, s, top){
+  box.innerHTML = '<div class="loading">Loading…</div>';
+  rpc('ctr_mgmt_home', { p_centre: CID, p_code: s.code }).then(function(D){
+    if (!D.ok) { box.innerHTML = '<div class="msg err">' + esc(D.msg) + '</div>'; return; }
+    var cur = D.centre.currency, today = D.today, T = mgmtTotals(D);
+    var roll = 0, ending = 0, past = 0, incr = 0, empty = 0, att = [];
+    D.units.forEach(function(u){
+      var l = T.leaseOf[u.id];
+      if (u.vacant || !l) { empty++; att.push({ u: u, dot: 'grey', t: esc(u.name) + ' is empty' + (u.area_m2 ? ' (' + m2s(u.area_m2) + ')' : '') }); return; }
+      var c = leaseCalc(l, u, today); if (c.state !== 'starts') roll += c.rent;
+      if (c.state === 'past') { past++; att.push({ u: u, dot: 'red', t: esc(u.name) + ': lease ended ' + niceY(l.end_on) + ', still trading (no new lease)' }); }
+      else if (c.state === 'ending') { ending++; att.push({ u: u, dot: 'amber', t: esc(u.name) + ': lease ends ' + niceY(l.end_on) + ' (' + c.toEnd + ' days)' }); }
+      if (c.toNext != null && c.toNext <= 60 && c.state !== 'past') { incr++; att.push({ u: u, dot: 'amber', t: esc(u.name) + ': rent goes up ' + (+l.increase_pct) + '% on ' + niceY(c.next) + ' to ' + money(cur, c.nextRent) }); }
+      if (!u.area_m2) att.push({ u: u, dot: 'grey', t: esc(u.name) + ': m² not filled in' });
+    });
+    var occ = T.all ? Math.round(T.let_ / T.all * 100) : 0;
+    var html = top +
+      '<div class="tiles">' +
+        '<div class="tile"><div class="k">Rent roll</div><div class="v">' + money(cur, roll) + '</div><div class="s">a month, excl. VAT</div></div>' +
+        '<div class="tile"><div class="k">Let</div><div class="v">' + occ + '%</div><div class="s">' + m2s(T.let_) + ' of ' + m2s(T.all) + '</div></div>' +
+        '<div class="tile"><div class="k">Ending in 90 days</div><div class="v">' + ending + '</div><div class="s">' + past + ' past their end</div></div>' +
+        '<div class="tile"><div class="k">Rent increases</div><div class="v">' + incr + '</div><div class="s">in the next 60 days</div></div>' +
+      '</div>' +
+      '<div class="h3">Needs attention</div><div class="box">' +
+        (att.length ? att.map(function(a){ return '<div class="att" data-open="' + a.u.id + '"><span class="dot ' + a.dot + '"></span><span>' + a.t + '</span></div>'; }).join('')
+                    : '<div class="empty">Nothing needs attention.</div>') + '</div>' +
+      '<div class="h3">Rent roll · ' + D.units.length + ' units' + (empty ? ' · ' + empty + ' empty' : '') + '</div>' +
+      D.units.map(function(u){
+        var l = T.leaseOf[u.id], c = l && !u.vacant ? leaseCalc(l, u, today) : null;
+        return '<div class="item rr" data-u="' + u.id + '"><div class="top" data-open="' + u.id + '"><div>' +
+          '<div class="ti">' + esc(u.name) + '</div>' +
+          '<div class="mt">' + (c ? esc(l.tenant_name) : 'Empty') + ' · ' + m2s(u.area_m2) + (u.location ? ' · ' + esc(u.location) : '') + '</div>' +
+          (c ? '<div class="mt">' + niceY(l.start_on) + ' to ' + (l.end_on ? niceY(l.end_on) : 'no end date') + '</div>' : '') +
+          '</div><div style="text-align:right">' + (c ? '<div class="amt">' + money(cur, c.rent) + '</div>' + leasePill(c, l) : '<span class="st empty">Empty</span>') +
+          '</div></div>' + (MGMT_OPEN === u.id ? unitCard(D, u, l, T) : '') + '</div>';
+      }).join('') +
+      '<div class="btns" style="margin-top:14px"><div class="b" id="addUnit">Add an empty unit</div><div class="b" id="csv">Export to Excel</div></div>' +
+      '<div id="addUnitSlot"></div>' +
+      '<div class="b wide" id="out">Log out</div>';
+    box.innerHTML = html;
+    if (MGMT_OPEN) { var open = box.querySelector('[data-u="' + MGMT_OPEN + '"]'); if (open) { wireUnitCard(D, open, s, T); } }
+    box.onclick = function(e){
+      var t;
+      if ((t = e.target.closest('[data-open]'))) {
+        var id = Number(t.getAttribute('data-open'));
+        MGMT_OPEN = (MGMT_OPEN === id ? null : id); ownerLeases(box, s, top);
+        if (MGMT_OPEN) setTimeout(function(){ var el = box.querySelector('[data-u="' + id + '"]'); if (el) el.scrollIntoView({ block: 'start' }); }, 30);
+      } else if (e.target.id === 'addUnit') {
+        $('addUnitSlot').innerHTML = '<div class="box" style="margin-top:10px"><div style="font-weight:700">Add an empty unit</div>' +
+          '<div class="hint">It is not on the door until a lease is added.</div>' +
+          '<label>Unit name</label><input id="nuName" maxlength="60" placeholder="e.g. Shop 10">' +
+          '<div class="two"><div><label>Where</label><input id="nuLoc" maxlength="40" placeholder="e.g. First floor"></div>' +
+          '<div><label>Size (m²)</label><input id="nuArea" inputmode="decimal"></div></div>' +
+          '<div class="btns"><div class="b sm main" id="nuSave">Add</div><div class="b sm" id="nuCancel">Cancel</div></div><div class="msg" id="nuMsg"></div></div>';
+        $('nuCancel').onclick = function(ev){ ev.stopPropagation(); $('addUnitSlot').innerHTML = ''; };
+        $('nuSave').onclick = function(ev){ ev.stopPropagation();
+          var a = toNum($('nuArea').value);
+          if (a != null && isNaN(a)) { $('nuMsg').className = 'msg err'; $('nuMsg').textContent = 'The size must be a number.'; return; }
+          rpc('ctr_space_save', { p_centre: CID, p_code: s.code, p_unit: null, p_name: $('nuName').value, p_location: $('nuLoc').value, p_area: a }).then(function(x){
+            if (!x.ok) { $('nuMsg').className = 'msg err'; $('nuMsg').textContent = x.msg; return; }
+            MGMT_OPEN = x.id; pageOwner('Empty unit added. Add its lease when a tenant signs.');
+          });
+        };
+      } else if (e.target.id === 'csv') { rentRollCsv(D, T);
+      } else if (e.target.id === 'out') { setSess(null); bar(); go('#'); }
+    };
+  });
+}
+
+function unitCard(D, u, l, T){
+  var cur = D.centre.currency, vac = u.vacant || !l, L = l || {};
+  var f = function(k){ return esc(L[k] == null ? '' : L[k]); };
+  return '<div class="box" style="margin-top:10px;cursor:default" data-card>' +
+    '<div class="sub" style="margin-top:0">The space</div>' +
+    (vac ? '<label>Unit name</label><input data-s="name" maxlength="60" value="' + esc(u.name) + '">' : '') +
+    '<div class="two"><div><label>Where</label><input data-s="location" maxlength="40" value="' + esc(u.location) + '"></div>' +
+    '<div><label>Size (m²)</label><input data-s="area" inputmode="decimal" value="' + esc(numStr(u.area_m2)) + '"></div></div>' +
+    '<div class="sub">' + (vac ? 'New lease' : 'The lease') + '</div>' +
+    (vac ? '<div class="hint">Saving a lease puts the shop on the door and gives it a shop code.</div>' +
+           '<label>Shop name on the door</label><input data-l="shop_name" maxlength="60" placeholder="e.g. Book Nook">' +
+           '<label>Kind</label><select data-l="category">' + CATS.map(function(k){ return '<option>' + esc(k) + '</option>'; }).join('') + '</select>' : '') +
+    '<label>Tenant (the company that signs)</label><input data-l="tenant_name" maxlength="100" value="' + f('tenant_name') + '" placeholder="e.g. Book Nook (Pty) Ltd">' +
+    '<div class="two"><div><label>Contact person</label><input data-l="contact" maxlength="80" value="' + f('contact') + '"></div>' +
+    '<div><label>Phone</label><input data-l="phone" maxlength="40" value="' + f('phone') + '"></div></div>' +
+    '<div class="two"><div><label>Email</label><input data-l="email" maxlength="120" value="' + f('email') + '"></div>' +
+    '<div><label>Tenant\'s VAT no.</label><input data-l="vat_no" maxlength="30" value="' + f('vat_no') + '"></div></div>' +
+    '<div class="two"><div><label>Start</label><input data-l="start_on" type="date" value="' + f('start_on') + '"></div>' +
+    '<div><label>End</label><input data-l="end_on" type="date" value="' + f('end_on') + '"></div></div>' +
+    '<div class="two"><div><label>Rent is</label><select data-l="rent_basis"><option value="month"' + (L.rent_basis !== 'm2' ? ' selected' : '') + '>a month</option>' +
+      '<option value="m2"' + (L.rent_basis === 'm2' ? ' selected' : '') + '>per m²</option></select></div>' +
+    '<div><label>Rent at the start (' + cur + ', excl. VAT)</label><input data-l="rent_value" inputmode="decimal" value="' + esc(numStr(L.rent_value)) + '"></div></div>' +
+    '<div class="two"><div><label>Yearly increase (%)</label><input data-l="increase_pct" inputmode="decimal" value="' + esc(numStr(L.increase_pct)) + '"></div>' +
+    '<div><label>Deposit (' + cur + ')</label><input data-l="deposit" inputmode="decimal" value="' + esc(numStr(L.deposit)) + '"></div></div>' +
+    '<label>Deposit held as</label><select data-l="deposit_kind">' + ['Cash','Bank guarantee','None'].map(function(k){
+      return '<option' + (L.deposit_kind === k ? ' selected' : '') + '>' + k + '</option>'; }).join('') + '</select>' +
+    '<label>Notes</label><textarea data-l="notes" maxlength="500">' + f('notes') + '</textarea>' +
+    '<div class="hint" data-calc></div>' +
+    '<div class="btns"><div class="b sm main" data-save>Save</div><div class="b sm" data-close>Close</div>' +
+      (!vac ? '<div class="b sm no" data-leave>Tenant leaves</div>' : '') + '</div>' +
+    '<div class="slot"></div><div class="msg" data-m></div>' +
+    '<div class="sub">Charges for this shop</div><div class="hint">Each charge uses the centre\'s way unless you change it here.</div>' +
+    D.charges.map(function(ct){
+      var r = chargeRow(D, u, ct), m = r.method || '';
+      return '<div class="crow" data-ch="' + ct.id + '"><div class="hd"><span class="nm">' + esc(ct.name) + '</span>' +
+        '<label class="chk"><input type="checkbox" data-c="enabled"' + (r.enabled ? ' checked' : '') + '> Charged</label></div>' +
+        '<select data-c="method"><option value="">Centre\'s way: ' + esc(METHODS[ct.method]) + '</option>' +
+          Object.keys(METHODS).map(function(k){ return '<option value="' + k + '"' + (m === k ? ' selected' : '') + '>' + esc(METHODS[k]) + '</option>'; }).join('') + '</select>' +
+        '<input type="text" data-c="amount" inputmode="decimal" placeholder="This shop\'s amount (' + cur + ' a month)" value="' + esc(numStr(r.amount)) + '">' +
+        '<label class="chk" data-meterbox style="margin-top:8px"><input type="checkbox" data-c="has_meter"' + (r.has_meter ? ' checked' : '') + '> Has its own meter</label>' +
+        '<input type="text" data-c="meter_no" maxlength="40" placeholder="Meter number" value="' + esc(r.meter_no || '') + '">' +
+        '<div class="est"></div></div>';
+    }).join('') +
+    '<div class="btns"><div class="b sm main" data-csave>Save charges</div></div><div class="msg" data-cm></div>' +
+  '</div>';
+}
+
+function wireUnitCard(D, wrap, s, T){
+  var card = wrap.querySelector('[data-card]'), u = D.units.filter(function(x){ return x.id === MGMT_OPEN; })[0];
+  var l = T.leaseOf[u.id], cur = D.centre.currency;
+  card.onclick = function(e){ e.stopPropagation(); };
+  function val(sel){ var el = card.querySelector(sel); return el ? el.value : ''; }
+  function showCalc(){
+    var area = toNum(val('[data-s=area]')), L = { rent_basis: val('[data-l=rent_basis]'), rent_value: toNum(val('[data-l=rent_value]')),
+      increase_pct: toNum(val('[data-l=increase_pct]')) || 0, start_on: val('[data-l=start_on]'), end_on: val('[data-l=end_on]') };
+    var el = card.querySelector('[data-calc]');
+    if (!L.start_on || L.rent_value == null || isNaN(L.rent_value)) { el.textContent = ''; return; }
+    var c = leaseCalc(L, { area_m2: area }, D.today);
+    el.textContent = 'Rent now: ' + money(cur, c.rent) + ' a month excl. VAT' + (c.next ? ' · next increase ' + niceY(c.next) + ' to ' + money(cur, c.nextRent) : '');
+  }
+  card.querySelectorAll('[data-l],[data-s]').forEach(function(el){ el.oninput = showCalc; el.onchange = showCalc; });
+  showCalc();
+  // charges: show the right boxes and the estimate as things change
+  function paintRow(row){
+    var ct = D.charges.filter(function(c){ return c.id === Number(row.getAttribute('data-ch')); })[0];
+    var r = { enabled: row.querySelector('[data-c=enabled]').checked, method: row.querySelector('[data-c=method]').value || null,
+              amount: toNum(row.querySelector('[data-c=amount]').value), has_meter: row.querySelector('[data-c=has_meter]').checked,
+              meter_no: row.querySelector('[data-c=meter_no]').value };
+    var m = r.method || ct.method;
+    row.querySelector('[data-c=method]').style.display = r.enabled ? '' : 'none';
+    row.querySelector('[data-c=amount]').style.display = r.enabled && m === 'fixed' ? '' : 'none';
+    row.querySelector('[data-meterbox]').style.display = r.enabled && m === 'metered' ? '' : 'none';
+    row.querySelector('[data-c=meter_no]').style.display = r.enabled && m === 'metered' && r.has_meter ? '' : 'none';
+    var uu = { id: u.id, area_m2: toNum(val('[data-s=area]')) };
+    row.querySelector('.est').innerHTML = chargeEst(D, uu, ct, r, T);
+    return { ct: ct, r: r };
+  }
+  card.querySelectorAll('.crow').forEach(function(row){
+    row.querySelectorAll('[data-c]').forEach(function(el){ el.onchange = function(){ paintRow(row); }; el.oninput = el.onchange; });
+    paintRow(row);
+  });
+  card.querySelector('[data-close]').onclick = function(){ MGMT_OPEN = null; pageOwner(); };
+  card.querySelector('[data-save]').onclick = function(){
+    var m = card.querySelector('[data-m]'); m.className = 'msg'; m.textContent = 'Saving…';
+    var area = toNum(val('[data-s=area]'));
+    if (area != null && isNaN(area)) { m.className = 'msg err'; m.textContent = 'The size must be a number.'; return; }
+    var L = {}; card.querySelectorAll('[data-l]').forEach(function(el){ L[el.getAttribute('data-l')] = el.value; });
+    rpc('ctr_space_save', { p_centre: CID, p_code: s.code, p_unit: u.id, p_name: val('[data-s=name]'), p_location: val('[data-s=location]'), p_area: area }).then(function(x){
+      if (!x.ok) { m.className = 'msg err'; m.textContent = x.msg; return; }
+      if ((u.vacant || !l) && !L.tenant_name.trim()) { pageOwner('Unit saved.'); return; }
+      rpc('ctr_lease_save', { p_centre: CID, p_code: s.code, p_unit: u.id, p_lease: L }).then(function(y){
+        if (!y.ok) { m.className = 'msg err'; m.textContent = y.msg; return; }
+        pageOwner(y.code ? 'Lease saved. ' + L.shop_name + ' is on the door; its shop code is ' + y.code + '.' : 'Lease saved.');
+      });
+    });
+  };
+  var leave = card.querySelector('[data-leave]');
+  if (leave) leave.onclick = function(){
+    var slot = card.querySelector('.slot');
+    slot.innerHTML = '<div class="ask">' + esc(u.name) + ' leaves. The lease is closed, the shop goes off the door and its code stops working.' +
+      '<label style="color:inherit">Last day</label><input type="date" data-end value="' + D.today + '">' +
+      '<div class="btns"><div class="b sm no" data-y>Yes, close the lease</div><div class="b sm" data-n>No</div></div><div class="msg" data-mm></div></div>';
+    slot.querySelector('[data-n]').onclick = function(){ slot.innerHTML = ''; };
+    slot.querySelector('[data-y]').onclick = function(){
+      rpc('ctr_lease_end', { p_centre: CID, p_code: s.code, p_lease: l.id, p_ended_on: slot.querySelector('[data-end]').value || null }).then(function(x){
+        if (!x.ok) { var mm = slot.querySelector('[data-mm]'); mm.className = 'msg err'; mm.textContent = x.msg; return; }
+        pageOwner('Lease closed. ' + u.name + ' is now an empty unit.');
+      });
+    };
+  };
+  card.querySelector('[data-csave]').onclick = function(){
+    var cm = card.querySelector('[data-cm]'), jobs = [];
+    var rows = Array.prototype.slice.call(card.querySelectorAll('.crow'));
+    for (var i = 0; i < rows.length; i++) {
+      var p = paintRow(rows[i]), old = chargeRow(D, u, p.ct), r = p.r;
+      if (r.amount != null && isNaN(r.amount)) { cm.className = 'msg err'; cm.textContent = p.ct.name + ': the amount must be a number.'; return; }
+      var same = !!old.enabled === r.enabled && (old.method || null) === r.method && (old.amount == null ? null : +old.amount) === r.amount &&
+                 !!old.has_meter === r.has_meter && (old.meter_no || '') === r.meter_no;
+      if (!same) jobs.push({ p_centre: CID, p_code: s.code, p_unit: u.id, p_charge: p.ct.id, p_enabled: r.enabled, p_method: r.method,
+                             p_amount: r.amount, p_has_meter: r.has_meter, p_meter_no: r.meter_no });
+    }
+    if (!jobs.length) { cm.className = 'msg ok'; cm.textContent = 'Nothing changed.'; return; }
+    cm.className = 'msg'; cm.textContent = 'Saving…';
+    (function next(i){
+      if (i >= jobs.length) { pageOwner('Charges saved for ' + u.name + '.'); return; }
+      rpc('ctr_unit_charge_save', jobs[i]).then(function(x){
+        if (!x.ok) { cm.className = 'msg err'; cm.textContent = x.msg; return; }
+        next(i + 1);
+      });
+    })(0);
+  };
+}
+
+function rentRollCsv(D, T){
+  var cur = D.centre.currency, today = D.today;
+  var q = function(v){ v = v == null ? '' : String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+  var rows = [['Unit','Where','m2','Tenant','Contact','Phone','Start','End','Rent basis','Rent at start','Rent now (' + cur + ' excl VAT)',
+               'Yearly increase %','Next increase','Rent after next increase','Deposit','Deposit held as','State']];
+  D.units.forEach(function(u){
+    var l = T.leaseOf[u.id];
+    if (u.vacant || !l) { rows.push([u.name, u.location, u.area_m2, '', '', '', '', '', '', '', '', '', '', '', '', '', 'Empty']); return; }
+    var c = leaseCalc(l, u, today);
+    rows.push([u.name, u.location, u.area_m2, l.tenant_name, l.contact, l.phone, l.start_on, l.end_on, l.rent_basis === 'm2' ? 'per m2' : 'per month',
+               (+l.rent_value).toFixed(2), c.rent.toFixed(2), +l.increase_pct, c.next || '', c.next ? c.nextRent.toFixed(2) : '', (+l.deposit).toFixed(2), l.deposit_kind,
+               { past: 'Past its end', ending: 'Ends in ' + c.toEnd + ' days', starts: 'Not started', running: 'Running' }[c.state]]);
+  });
+  var csv = '﻿' + rows.map(function(r){ return r.map(q).join(','); }).join('\r\n');
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  a.download = 'Rent roll ' + D.centre.name.replace(/[\\/:*?"<>|]+/g, '-') + ' ' + today + '.csv';
+  document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+
+function ownerCharges(box, s, top){
+  box.innerHTML = '<div class="loading">Loading…</div>';
+  rpc('ctr_mgmt_home', { p_centre: CID, p_code: s.code }).then(function(D){
+    if (!D.ok) { box.innerHTML = '<div class="msg err">' + esc(D.msg) + '</div>'; return; }
+    var c = D.centre, cur = c.currency, T = mgmtTotals(D);
+    function rateText(ct){
+      if (ct.method === 'fixed') return money(cur, +ct.rate) + ' a month per shop (default)';
+      if (ct.method === 'per_m2') return money(cur, +ct.rate) + ' per m² a month';
+      if (ct.method === 'share') return 'each shop pays its share of the centre\'s bill';
+      if (ct.method === 'metered') return money(cur, +ct.rate) + ' per unit used' + (+ct.basic ? ' + basic ' + money(cur, +ct.basic) : '') + '; no meter = share by area';
+      return 'not charged';
+    }
+    box.innerHTML = top +
+      '<div class="box"><div style="font-weight:700">Settings</div>' +
+        '<div class="two"><div><label>Currency</label><select id="stCur"><option value="E"' + (cur === 'E' ? ' selected' : '') + '>E (Lilangeni)</option>' +
+          '<option value="R"' + (cur === 'R' ? ' selected' : '') + '>R (Rand)</option></select></div>' +
+        '<div><label>Centre\'s VAT no.</label><input id="stVat" maxlength="30" value="' + esc(c.vat_no || '') + '"></div></div>' +
+        '<label>Share by area is worked out on</label><select id="stShare">' +
+          '<option value="all"' + (c.share_basis !== 'let' ? ' selected' : '') + '>The whole centre\'s m² (the owner carries the empty units)</option>' +
+          '<option value="let"' + (c.share_basis === 'let' ? ' selected' : '') + '>Let m² only (the tenants carry the empty units)</option></select>' +
+        '<div class="hint">Whole centre: ' + m2s(T.all) + ' · let: ' + m2s(T.let_) + '. VAT is 15%.</div>' +
+        '<div class="b main wide" id="stSave">Save settings</div><div class="msg" id="stMsg"></div></div>' +
+      '<div class="h3">The centre\'s charges</div><div class="hint">These are the choices on every shop\'s charges. Rent is on each lease.</div>' +
+      D.charges.map(function(ct){
+        return '<div class="item" data-ct="' + ct.id + '"><div class="top" style="display:flex;justify-content:space-between;gap:8px">' +
+          '<div class="ti">' + esc(ct.name) + '</div><span class="st ' + (ct.method === 'off' ? 'ended' : 'approved') + '">' + esc(METHODS[ct.method]) + '</span></div>' +
+          '<div class="mt">' + rateText(ct) + (ct.vat ? ' · plus VAT' : ' · no VAT') + '</div>' +
+          '<div class="btns"><div class="b sm" data-ed="' + ct.id + '">Change</div><div class="b sm no" data-del="' + ct.id + '">Remove</div></div><div class="slot"></div></div>';
+      }).join('') +
+      '<div class="b main wide" id="ctAdd">Add a charge</div><div id="ctAddSlot"></div>' +
+      '<div class="b wide" id="out">Log out</div>';
+    $('stSave').onclick = function(){
+      var m = $('stMsg'); m.className = 'msg'; m.textContent = 'Saving…';
+      rpc('ctr_settings_save', { p_centre: CID, p_code: s.code, p_currency: $('stCur').value, p_share_basis: $('stShare').value, p_vat_no: $('stVat').value }).then(function(x){
+        if (!x.ok) { m.className = 'msg err'; m.textContent = x.msg; return; }
+        pageOwner('Settings saved.');
+      });
+    };
+    function form(ct){
+      ct = ct || { name: '', method: 'fixed', rate: 0, basic: 0, vat: true, sort: 100 + D.charges.length * 10 };
+      return '<div class="box" style="margin-top:10px" data-form="' + (ct.id || '') + '">' +
+        '<label>Name</label><input data-f="name" maxlength="40" value="' + esc(ct.name) + '" placeholder="e.g. Air conditioning">' +
+        '<label>How it is worked out</label><select data-f="method">' + Object.keys(METHODS).map(function(k){
+          return '<option value="' + k + '"' + (ct.method === k ? ' selected' : '') + '>' + esc(METHODS[k]) + '</option>'; }).join('') + '</select>' +
+        '<div data-rate><label data-ratelabel></label><input data-f="rate" inputmode="decimal" value="' + esc(numStr(ct.rate)) + '"></div>' +
+        '<div data-basic><label>Basic charge a month (' + cur + ')</label><input data-f="basic" inputmode="decimal" value="' + esc(numStr(ct.basic)) + '"></div>' +
+        '<div class="hint" data-how></div>' +
+        '<label class="chk" style="margin-top:12px"><input type="checkbox" data-f="vat"' + (ct.vat ? ' checked' : '') + '> Add VAT (15%)</label>' +
+        '<div class="two"><div><label>Place in the list</label><input data-f="sort" inputmode="numeric" value="' + esc(ct.sort) + '"></div><div></div></div>' +
+        '<div class="btns"><div class="b sm main" data-fsave>Save</div><div class="b sm" data-fcancel>Cancel</div></div><div class="msg" data-fm></div></div>';
+    }
+    function wire(holder){
+      var f = holder.querySelector('[data-form]');
+      function paint(){
+        var m = f.querySelector('[data-f=method]').value;
+        f.querySelector('[data-rate]').style.display = (m === 'fixed' || m === 'per_m2' || m === 'metered') ? '' : 'none';
+        f.querySelector('[data-basic]').style.display = m === 'metered' ? '' : 'none';
+        f.querySelector('[data-ratelabel]').textContent = m === 'fixed' ? 'Default amount per shop a month (' + cur + ')' :
+          m === 'per_m2' ? 'Rate per m² a month (' + cur + ')' : 'Tariff per unit used, e.g. per kWh or kl (' + cur + ')';
+        f.querySelector('[data-how]').textContent = {
+          fixed: 'The same amount each month. A shop can have its own amount.',
+          per_m2: 'Each shop pays its m² × this rate.',
+          share: 'Each month you enter the centre\'s bill; each shop pays its share by m².',
+          metered: 'Shops with a meter pay units used × tariff (+ basic). Shops without a meter pay a share by m².',
+          off: 'Not charged.' }[m];
+      }
+      f.querySelector('[data-f=method]').onchange = paint; paint();
+      f.querySelector('[data-fcancel]').onclick = function(ev){ ev.stopPropagation(); holder.innerHTML = ''; };
+      f.querySelector('[data-fsave]').onclick = function(ev){ ev.stopPropagation();
+        var g = function(k){ return f.querySelector('[data-f=' + k + ']'); }, m = f.querySelector('[data-fm]');
+        var rate = toNum(g('rate').value) || 0, basic = toNum(g('basic').value) || 0;
+        if (isNaN(rate) || isNaN(basic)) { m.className = 'msg err'; m.textContent = 'Amounts must be numbers.'; return; }
+        var id = f.getAttribute('data-form');
+        rpc('ctr_charge_save', { p_centre: CID, p_code: s.code, p_id: id ? Number(id) : null, p_name: g('name').value, p_method: g('method').value,
+            p_rate: rate, p_basic: basic, p_vat: g('vat').checked, p_sort: parseInt(g('sort').value, 10) || 100 }).then(function(x){
+          if (!x.ok) { m.className = 'msg err'; m.textContent = x.msg; return; }
+          pageOwner(id ? 'Charge saved.' : 'Charge added. Every shop now has it in its charges.');
+        });
+      };
+    }
+    box.onclick = function(e){
+      var t;
+      if (e.target.id === 'ctAdd') { $('ctAddSlot').innerHTML = form(null); wire($('ctAddSlot')); }
+      else if ((t = e.target.closest('[data-ed]'))) {
+        var ct = D.charges.filter(function(x){ return x.id === Number(t.getAttribute('data-ed')); })[0], sl = t.closest('.item').querySelector('.slot');
+        sl.innerHTML = form(ct); wire(sl);
+      } else if ((t = e.target.closest('[data-del]'))) {
+        var did = Number(t.getAttribute('data-del')), nm = D.charges.filter(function(x){ return x.id === did; })[0].name;
+        askIn(t.closest('.item').querySelector('.slot'), 'Remove ' + nm + ' from the centre\'s charges? No shop will be charged for it.', 'Yes, remove', function(){
+          return rpc('ctr_charge_remove', { p_centre: CID, p_code: s.code, p_id: did }).then(function(x){ if (x.ok) pageOwner(nm + ' removed.'); return x; });
+        });
+      } else if (e.target.id === 'out') { setSess(null); bar(); go('#'); }
+    };
+  });
 }
 
 // ---------- router ----------
