@@ -116,6 +116,57 @@ textarea{min-height:70px;resize:vertical}
 .cnt{display:inline-block;min-width:18px;padding:0 5px;margin-left:4px;border-radius:999px;background:var(--accent);color:var(--accentInk);font-size:11px;text-align:center}
 .cats{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin-top:10px}
 .cats::-webkit-scrollbar{display:none}
+/* e5: the front door ("come shopping") and logos */
+.lg{flex:0 0 auto;border-radius:12px;overflow:hidden;background:#fff;border:1px solid var(--line);display:flex;align-items:center;justify-content:center}
+.lg img{width:100%;height:100%;object-fit:contain}
+.lg.ini{color:#fff;font-weight:800;border:0}
+.lg.big{border-radius:24px;box-shadow:0 8px 24px rgba(15,23,42,.12)}
+.hero{position:relative;overflow:hidden;color:#fff;padding:26px 18px 18px;
+  background:radial-gradient(circle at 85% 10%,rgba(255,214,102,.35),transparent 40%),radial-gradient(circle at 0% 100%,rgba(43,179,163,.45),transparent 45%),linear-gradient(150deg,#0b2a5b 0%,#16408a 55%,#1b6f8f 100%)}
+.hero-in{position:relative;z-index:1}
+.hero .testpill{margin:0 0 10px}
+.eyebrow{font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#ffd666}
+.hero h1{margin:6px 0 0;font-size:30px;line-height:1.05;font-weight:800;letter-spacing:-.5px}
+.hero .hsub{margin-top:6px;font-size:15px;opacity:.9}
+.cats{align-items:center}
+.cats .tab{flex:0 0 auto;white-space:nowrap}
+.open{display:inline-flex;align-items:center;gap:8px;margin-top:14px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);
+  padding:6px 12px;border-radius:999px;font-size:13px;font-weight:600}
+.dotl{width:9px;height:9px;border-radius:50%;background:#51cf66;box-shadow:0 0 0 3px rgba(81,207,102,.3)}
+.cta{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}
+.cta div{border-radius:14px;padding:13px 10px;text-align:center;font-weight:800;font-size:14px;cursor:pointer}
+.cta-a{background:#ffd43b;color:#3a2c00;box-shadow:0 6px 16px rgba(255,212,59,.35)}
+.cta-b{background:#fff;color:#0b2a5b}
+.hero-logos{display:flex;gap:10px;overflow-x:auto;margin-top:18px;padding-bottom:4px;scrollbar-width:none}
+.hero-logos::-webkit-scrollbar{display:none}
+.hl{flex:0 0 58px;height:58px;border-radius:14px;background:#fff;overflow:hidden;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.18)}
+.hl img{width:100%;height:100%;object-fit:contain}
+.sec-h{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.sec-h h2{margin:0;font-size:20px;font-weight:800;letter-spacing:-.3px}
+.cnt2{background:#ffd43b;color:#3a2c00;font-weight:800;font-size:12px;padding:3px 9px;border-radius:999px;margin-right:auto;margin-left:8px}
+.lnk2{color:var(--brand2);font-weight:700;font-size:14px;cursor:pointer}
+.sp{flex:0 0 250px;border-radius:18px;padding:14px;gap:8px;box-shadow:0 6px 18px rgba(15,44,91,.08);border:1px solid var(--line)}
+.sp-top{display:flex;gap:10px;align-items:center}
+.sp .ti{font-size:18px;font-weight:800}
+.go-sh{font-size:12px;font-weight:700;color:var(--brand2)}
+.wall{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+.wt{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 6px 10px;text-align:center;cursor:pointer;position:relative;
+  display:flex;flex-direction:column;align-items:center;gap:5px;box-shadow:0 2px 8px rgba(15,44,91,.05)}
+.wn{font-weight:700;font-size:12.5px;line-height:1.15}
+.wc{font-size:11px;color:var(--quiet)}
+.wdot{position:absolute;top:6px;right:6px;background:#ffd43b;color:#3a2c00;font-size:9.5px;font-weight:800;padding:2px 6px;border-radius:999px}
+.forecourt{background:#101828;color:#fff;border-radius:18px;padding:16px}
+.fc-t{font-size:12px;letter-spacing:.14em;font-weight:800;color:#ffd43b}
+.fuel2{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.fuel2 div{background:#1d2939;border-radius:12px;padding:10px 4px;text-align:center;font-size:12px;font-weight:700;color:#cbd5e1}
+.fuel2 b{display:block;font-family:ui-monospace,Consolas,monospace;font-size:20px;color:#ff6b6b;margin-top:4px;letter-spacing:.05em}
+.fc-n{font-size:12px;color:#98a2b3;margin-top:10px}
+.whatson{display:flex;gap:12px;align-items:center;background:linear-gradient(135deg,#fff4e6,#ffe8cc);border:1px solid #ffd8a8;border-radius:16px;padding:14px}
+.wo-ic{font-size:30px}
+.shophero{display:flex;flex-direction:column;align-items:center;text-align:center;padding:22px 16px 8px}
+.sh-n{font-size:24px;font-weight:800;margin-top:12px}
+.sh-c{color:var(--quiet);font-size:14px;margin-top:2px}
+.offlink{color:var(--quiet)}
 /* e2: leases and charges */
 .tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .tile{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 12px}
@@ -167,7 +218,7 @@ input[type=date]{-webkit-appearance:none;appearance:none;min-height:44px}
 <script>
 (function(){
 'use strict';
-var ESM_BUILD = 'ESM e4';
+var ESM_BUILD = 'ESM e5';
 var MODE = 'shop';   // Block 1 = 'shop' (index.html: shoppers + tenants) · Block 2 = 'office' (office.html). Set by build_esm.py.
 var SB_URL = 'https://pqduivcxwykcixqsfrwi.supabase.co';
 var SB_KEY = 'sb_publishable_Cl8uDRrLqx9VMaC3lifpWA_Wl91vVy2';   // OTR-Tennis public (publishable) key
@@ -242,18 +293,49 @@ function loadDoor(){
   });
 }
 
+// ---------- e5: logos ----------
+var AV_COLS = ['#e8590c','#2b8a3e','#1971c2','#9c36b5','#c2255c','#0c8599','#5f3dc4','#d9480f','#2f9e44'];
+function avColour(name){ var h = 0; String(name).split('').forEach(function(ch){ h = (h * 31 + ch.charCodeAt(0)) >>> 0; }); return AV_COLS[h % AV_COLS.length]; }
+function logoBox(u, px, cls){
+  var st = 'width:' + px + 'px;height:' + px + 'px;';
+  if (u && u.logo) return '<div class="lg ' + (cls || '') + '" style="' + st + '"><img src="' + esc(u.logo) + '" alt=""></div>';
+  return '<div class="lg ini ' + (cls || '') + '" style="' + st + 'background:' + avColour(u ? u.name : '') + ';font-size:' + Math.round(px * 0.36) + 'px">' + esc(initials(u ? u.name : '?')) + '</div>';
+}
+function unitById(id){ return (DOOR && DOOR.units || []).filter(function(u){ return u.id === id; })[0]; }
+// a picture from the phone → a 200×200 square JPEG (about 10–30 KB), white background, logo centred
+function fileToLogo(file){
+  return new Promise(function(ok, no){
+    if (!file || !/^image\//.test(file.type)) return no('Choose a picture (JPG or PNG).');
+    var fr = new FileReader();
+    fr.onerror = function(){ no('That picture could not be read.'); };
+    fr.onload = function(){
+      var im = new Image();
+      im.onerror = function(){ no('That picture could not be read.'); };
+      im.onload = function(){
+        var S = 200, pad = 12, cv = document.createElement('canvas'); cv.width = S; cv.height = S;
+        var g = cv.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, S, S);
+        var k = Math.min((S - 2 * pad) / im.width, (S - 2 * pad) / im.height), w = im.width * k, h = im.height * k;
+        g.drawImage(im, (S - w) / 2, (S - h) / 2, w, h);
+        ok(cv.toDataURL('image/jpeg', 0.85));
+      };
+      im.src = fr.result;
+    };
+    fr.readAsDataURL(file);
+  });
+}
+
 function specialCard(s){
+  var u = unitById(s.unit_id) || { name: s.unit };
   return '<div class="sp" data-go="#shop/' + s.unit_id + '">' +
-    '<div class="shop">' + esc(s.unit) + '</div>' +
+    '<div class="sp-top">' + logoBox(u, 46) + '<div><div class="shop">' + esc(s.unit) + '</div><div class="until">until ' + nice(s.ends_on) + '</div></div></div>' +
     '<div class="ti">' + esc(s.title) + '</div>' +
     (s.detail ? '<div class="de">' + esc(s.detail) + '</div>' : '') +
-    '<div class="bt">' + (s.price ? '<span class="price">' + esc(s.price) + '</span>' : '<span></span>') +
-    '<span class="until">until ' + nice(s.ends_on) + '</span></div></div>';
+    '<div class="bt">' + (s.price ? '<span class="price">' + esc(s.price) + '</span>' : '<span></span>') + '<span class="go-sh">Visit the shop ›</span></div></div>';
 }
 
 function shopRow(u, nSpecials){
   var meta = [u.category, u.location, u.hours].filter(Boolean).map(esc).join(' · ');
-  return '<div class="shoprow" data-go="#shop/' + u.id + '"><div class="av">' + esc(initials(u.name)) + '</div>' +
+  return '<div class="shoprow" data-go="#shop/' + u.id + '">' + logoBox(u, 46) +
     '<div><div class="nm">' + esc(u.name) + (nSpecials ? '<span class="tag">' + nSpecials + ' special' + (nSpecials > 1 ? 's' : '') + '</span>' : '') +
     '</div><div class="mt">' + meta + '</div></div><div class="go">›</div></div>';
 }
@@ -261,37 +343,52 @@ function shopRow(u, nSpecials){
 function countBy(list){ var m = {}; list.forEach(function(s){ m[s.unit_id] = (m[s.unit_id] || 0) + 1; }); return m; }
 
 // ---------- pages ----------
+var DOOR_CAT = '';
 function pageDoor(){
   var c = DOOR.centre, sp = DOOR.specials, units = DOOR.units, per = countBy(sp);
+  var used = CATS.filter(function(k){ return units.some(function(u){ return u.category === k; }); });
+  var hasFuel = units.some(function(u){ return u.category === 'Fuel & car'; });
   APP.innerHTML =
-    '<header class="band"><div class="top"><div class="logo">centre<br>logo</div><div>' +
-      '<h1>' + esc(c.name) + '</h1><div class="sub">' + esc(c.tagline || '') + '</div></div></div>' +
-      (c.hours ? '<span class="pill">Open: ' + esc(c.hours) + '</span>' : '') +
-      (c.is_test ? '<span class="testpill">TEST</span>' : '') +
+    '<header class="hero">' +
+      '<div class="hero-in">' +
+        (c.is_test ? '<span class="testpill">TEST</span>' : '') +
+        '<div class="eyebrow">Come in · see what\'s on today</div>' +
+        '<h1>' + esc(c.name) + '</h1>' +
+        '<div class="hsub">' + esc(c.tagline || 'Shops · Specials · Services') + '</div>' +
+        (c.hours ? '<div class="open"><span class="dotl"></span>Open ' + esc(c.hours) + '</div>' : '') +
+        '<div class="cta"><div class="cta-a" id="goSpecials">🏷️ ' + sp.length + ' special' + (sp.length === 1 ? '' : 's') + ' today</div>' +
+        '<div class="cta-b" data-go="#shops">🛍️ Browse ' + units.length + ' shops</div></div>' +
+      '</div>' +
+      '<div class="hero-logos">' + units.filter(function(u){ return u.logo; }).slice(0, 8).map(function(u){
+        return '<div class="hl" data-go="#shop/' + u.id + '"><img src="' + esc(u.logo) + '" alt="' + esc(u.name) + '"></div>'; }).join('') + '</div>' +
     '</header>' +
-    '<div class="squares">' +
-      '<div class="sq" id="sqSpecials"><div class="ic">🏷️</div><b>Today\'s specials</b><span>' + sp.length + ' from the shops</span></div>' +
-      '<div class="sq" data-go="#shops"><div class="ic">🛍️</div><b>Find a shop</b><span>' + units.length + ' shops &amp; services</span></div>' +
-    '</div>' +
-    '<section class="sec" id="secSpecials"><h2><span class="n">1</span>Specials</h2>' +
+    '<section class="sec" id="secSpecials"><div class="sec-h"><h2>Hot right now</h2>' + (sp.length ? '<span class="cnt2">' + sp.length + '</span>' : '') + '</div>' +
       (sp.length ? '<div class="row">' + sp.map(specialCard).join('') + '</div>'
-                 : '<div class="box empty">No specials right now. Check again soon.</div>') +
+                 : '<div class="box empty">No specials right now. Pop in and say hello, or check again soon.</div>') +
     '</section>' +
-    '<section class="sec"><h2><span class="n">2</span>Shops &amp; services</h2><div>' +
-      (units.length ? units.map(function(u){ return shopRow(u, per[u.id]); }).join('') : '<div class="box empty">No shops yet.</div>') +
-    '</div></section>' +
-    '<section class="sec"><h2><span class="n">3</span>Service station</h2><div class="bracket">' +
-      '<p class="what">To come: today\'s fuel prices, car wash and forecourt specials.</p>' +
-      '<div class="fuel"><div>Petrol 93<b>—</b></div><div>Petrol 95<b>—</b></div><div>Diesel<b>—</b></div></div></div></section>' +
-    '<section class="sec"><h2><span class="n">4</span>Events &amp; notices</h2><div class="bracket">' +
-      '<p class="what">To come: what\'s on at the centre this week.</p><div class="li">event</div><div class="li">event</div></div></section>' +
-    '<section class="sec"><h2><span class="n">5</span>Hours &amp; map</h2><div class="box"><div class="info">' +
+    '<section class="sec"><div class="sec-h"><h2>Our shops</h2><span class="lnk2" data-go="#shops">Search ›</span></div>' +
+      '<div class="cats" id="dCats">' + ['All'].concat(used).map(function(k){
+        var on = (k === 'All' ? DOOR_CAT === '' : DOOR_CAT === k);
+        return '<div class="tab' + (on ? ' on' : '') + '" data-dcat="' + esc(k) + '">' + esc(k) + '</div>'; }).join('') + '</div>' +
+      '<div class="wall">' + units.filter(function(u){ return !DOOR_CAT || u.category === DOOR_CAT; }).map(function(u){
+        return '<div class="wt" data-go="#shop/' + u.id + '">' + logoBox(u, 64) + '<div class="wn">' + esc(u.name) + '</div>' +
+          '<div class="wc">' + esc(u.category) + '</div>' + (per[u.id] ? '<span class="wdot">' + per[u.id] + ' special' + (per[u.id] > 1 ? 's' : '') + '</span>' : '') + '</div>';
+      }).join('') + '</div>' +
+    '</section>' +
+    (hasFuel ? '<section class="sec"><div class="sec-h"><h2>Fill up while you shop</h2></div><div class="forecourt">' +
+      '<div class="fc-t">FUEL PRICES TODAY</div><div class="fuel2"><div>93<b>—.——</b></div><div>95<b>—.——</b></div><div>Diesel<b>—.——</b></div></div>' +
+      '<div class="fc-n">Live prices are coming soon.</div></div></section>' : '') +
+    '<section class="sec"><div class="sec-h"><h2>What\'s on</h2></div><div class="whatson">' +
+      '<div class="wo-ic">🎉</div><div><b>Events and news are coming soon</b><div class="hint" style="margin-top:2px">Markets, kids\' days, late-night shopping: watch this space.</div></div></div></section>' +
+    '<section class="sec"><div class="sec-h"><h2>Visit us</h2></div><div class="box"><div class="info">' +
       (c.hours ? '<b>Hours</b><span>' + esc(c.hours) + '</span>' : '') +
       (c.phone ? '<b>Phone</b><a href="tel:' + esc(c.phone.replace(/\s/g,'')) + '">' + esc(c.phone) + '</a>' : '') +
       (c.address ? '<b>Address</b><span>' + esc(c.address) + '</span>' : '') +
       '</div><div class="row" style="margin-top:12px"><div class="ph" style="flex-basis:100%;height:110px">map — to come</div></div></div></section>' +
-    '<div class="foot">' + ESM_BUILD + '</div>';
-  $('sqSpecials').onclick = function(){ $('secSpecials').scrollIntoView({ behavior:'smooth' }); };
+    '<div class="foot">' + ESM_BUILD + ' · <a href="office.html' + (CID ? '?c=' + CID : '') + '" class="offlink">Centre office</a></div>';
+  $('goSpecials').onclick = function(){ $('secSpecials').scrollIntoView({ behavior:'smooth' }); };
+  $('dCats').onclick = function(e){ var t = e.target.closest('[data-dcat]'); if (!t) return;
+    var k = t.getAttribute('data-dcat'); DOOR_CAT = (k === 'All' ? '' : k); var y = window.scrollY; pageDoor(); window.scrollTo(0, y); };
 }
 
 function pageShops(){
@@ -320,14 +417,13 @@ function pageShop(id){
   if (!u) { APP.innerHTML = mini('Shop', '#') + '<div class="pad empty">This shop is not on the door any more.</div>'; return; }
   var sp = DOOR.specials.filter(function(s){ return s.unit_id === id; });
   APP.innerHTML = mini(u.name, '#') +
-    '<div class="pad"><div class="box"><div style="display:flex;gap:12px;align-items:center">' +
-      '<div class="av" style="flex-basis:48px;height:48px;font-size:17px">' + esc(initials(u.name)) + '</div>' +
-      '<div><div style="font-weight:700;font-size:18px">' + esc(u.name) + '</div><div class="hint">' + esc(u.category) + '</div></div></div>' +
-      '<div class="info" style="margin-top:14px">' +
+    '<div class="shophero" style="background:linear-gradient(160deg,' + avColour(u.name) + '22,#ffffff 70%)">' + logoBox(u, 120, 'big') +
+      '<div class="sh-n">' + esc(u.name) + '</div><div class="sh-c">' + esc(u.category) + (u.location ? ' · ' + esc(u.location) : '') + '</div></div>' +
+    '<div class="pad"><div class="box"><div class="info">' +
         (u.location ? '<b>Where</b><span>' + esc(u.location) + '</span>' : '') +
         (u.hours ? '<b>Hours</b><span>' + esc(u.hours) + '</span>' : '') +
         (u.phone ? '<b>Phone</b><a href="tel:' + esc(u.phone.replace(/\s/g,'')) + '">' + esc(u.phone) + '</a>' : '') +
-      '</div></div>' +
+      '</div>' + (u.phone ? '<a class="b main wide" style="text-decoration:none" href="tel:' + esc(u.phone.replace(/\s/g,'')) + '">Call ' + esc(u.name) + '</a>' : '') + '</div>' +
       '<div class="h3">Specials</div>' +
       (sp.length ? sp.map(function(s){
         return '<div class="item"><div class="ti">' + esc(s.title) + (s.price ? ' <span class="price">' + esc(s.price) + '</span>' : '') + '</div>' +
@@ -386,6 +482,10 @@ function pageMyShop(note){
         '<label for="en">Last day</label><input id="en" type="date" min="' + today + '" max="' + addDays(today, 60) + '" value="' + addDays(today, 7) + '">' +
         '<div class="b main wide" id="send">Send for approval</div><div class="msg' + (note ? ' ok' : '') + '" id="m">' + esc(note || '') + '</div>' +
       '</div>' +
+      '<div class="h3">Your logo</div><div class="box" style="display:flex;gap:14px;align-items:center">' + logoBox(r.unit, 72) +
+        '<div style="flex:1"><div class="hint" style="margin:0 0 8px">Shoppers see it on the door, your specials and your shop page.</div>' +
+        '<label class="b sm main">' + (r.unit.logo ? 'Change logo' : 'Add your logo') + '<input type="file" accept="image/*" id="myLogo" style="display:none"></label>' +
+        '<div class="msg" id="logoMsg"></div></div></div>' +
       '<div id="acct"></div>' +
       '<div class="h3">Your specials</div><div id="mine"></div>' +
       '<div class="b wide" id="out">Log out</div></div>';
@@ -398,6 +498,15 @@ function pageMyShop(note){
         '<div class="btns"><div class="b sm no" data-rm="' + x.id + '">Remove</div></div><div class="slot"></div></div>';
     }).join('') : '<div class="empty">You have not posted any specials yet.</div>';
     shopAccount($('acct'), s);
+    $('myLogo').onchange = function(){
+      var lm = $('logoMsg'); lm.className = 'msg'; lm.textContent = 'Preparing the logo…';
+      fileToLogo($('myLogo').files[0]).then(function(data){
+        return rpc('ctr_unit_logo_save', { p_centre: CID, p_code: s.code, p_unit: null, p_logo: data });
+      }).then(function(x){
+        if (!x.ok) { lm.className = 'msg err'; lm.textContent = x.msg; return; }
+        pageMyShop('Your logo is saved and shows on the door.');
+      }, function(err){ lm.className = 'msg err'; lm.textContent = String(err); });
+    };
     $('send').onclick = function(){
       var m = $('m');
       m.className = 'msg'; m.textContent = 'Sending…';
@@ -529,12 +638,30 @@ function ownerShops(box, r, s, top){
   box.innerHTML = top + '<div class="b main wide" style="margin-top:0" id="add">Add a shop</div><div id="addSlot"></div>' +
     '<div class="h3">' + r.units.length + ' shops</div>' +
     r.units.map(function(u){
-      return '<div class="item" data-u="' + u.id + '"><div class="ti">' + esc(u.name) + '</div>' +
-        '<div class="mt">' + [u.category, u.location, u.hours, u.phone].filter(Boolean).map(esc).join(' · ') + '</div>' +
+      return '<div class="item" data-u="' + u.id + '"><div style="display:flex;gap:12px;align-items:center">' + logoBox(u, 48) + '<div><div class="ti">' + esc(u.name) + '</div>' +
+        '<div class="mt">' + [u.category, u.location, u.hours, u.phone].filter(Boolean).map(esc).join(' · ') + '</div></div></div>' +
         '<div class="mt">Shop code: <span class="code">' + esc(u.code || '—') + '</span></div>' +
         '<div class="btns"><div class="b sm" data-ed="' + u.id + '">Change</div><div class="b sm" data-nc="' + u.id + '">New code</div>' +
+        '<label class="b sm">' + (u.logo ? 'Change logo' : 'Add logo') + '<input type="file" accept="image/*" data-logo="' + u.id + '" style="display:none"></label>' +
+        (u.logo ? '<div class="b sm" data-nologo="' + u.id + '">No logo</div>' : '') +
         '<div class="b sm no" data-del="' + u.id + '">Remove</div></div><div class="slot"></div></div>';
     }).join('') + '<div class="b wide" id="out">Log out</div>';
+  box.querySelectorAll('[data-logo]').forEach(function(inp){ inp.onchange = function(){
+    var id = Number(inp.getAttribute('data-logo')), slot = inp.closest('.item').querySelector('.slot');
+    slot.innerHTML = '<div class="msg">Preparing the logo…</div>';
+    fileToLogo(inp.files[0]).then(function(data){
+      return rpc('ctr_unit_logo_save', { p_centre: CID, p_code: s.code, p_unit: id, p_logo: data });
+    }).then(function(x){
+      if (!x.ok) { slot.innerHTML = '<div class="msg err">' + esc(x.msg) + '</div>'; return; }
+      pageOwner('Logo saved for ' + find(id).name + '. It shows on the door now.');
+    }, function(err){ slot.innerHTML = '<div class="msg err">' + esc(String(err)) + '</div>'; });
+  }; });
+  box.querySelectorAll('[data-nologo]').forEach(function(b){ b.onclick = function(){
+    var id = Number(b.getAttribute('data-nologo'));
+    askIn(b.closest('.item').querySelector('.slot'), 'Take the logo off ' + find(id).name + '?', 'Yes, no logo', function(){
+      return rpc('ctr_unit_logo_save', { p_centre: CID, p_code: s.code, p_unit: id, p_logo: null }).then(function(x){ if (x.ok) pageOwner('Logo removed.'); return x; });
+    });
+  }; });
   function find(id){ return r.units.filter(function(u){ return u.id === id; })[0]; }
   function wire(holder){
     holder.querySelector('[data-cancel]').onclick = function(ev){ ev.stopPropagation(); holder.innerHTML = ''; };
