@@ -167,6 +167,34 @@ textarea{min-height:70px;resize:vertical}
 .sh-n{font-size:24px;font-weight:800;margin-top:12px}
 .sh-c{color:var(--quiet);font-size:14px;margin-top:2px}
 .offlink{color:var(--quiet)}
+/* e6: the centre office */
+.offwrap{min-height:100vh;background:radial-gradient(circle at 80% 0%,rgba(255,214,102,.25),transparent 40%),linear-gradient(160deg,#0b2a5b,#102a43 60%,#0b1f33);padding:40px 18px 30px}
+.offcard{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:22px;padding:24px 20px;color:#fff;text-align:center}
+.officon{font-size:42px}
+.offname{font-size:15px;font-weight:700;color:#ffd666;margin-top:6px;letter-spacing:.02em}
+.offtitle{font-size:30px;font-weight:800;letter-spacing:-.5px;margin-top:2px}
+.offsub{font-size:13px;color:#cbd5e1;margin:4px 0 18px}
+.offcard label{text-align:left}
+.offcard input{text-align:center;font-size:22px;letter-spacing:.3em;font-weight:700}
+.offbtn{background:#ffd43b;border-color:#ffd43b;color:#3a2c00;font-size:16px;padding:14px}
+.offhint{margin-top:18px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:14px;color:#e2e8f0;font-size:13px;line-height:1.6}
+.kbd{display:inline-block;background:rgba(255,255,255,.15);border-radius:6px;padding:0 6px;font-weight:700}
+.hometiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.htile{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;cursor:pointer;box-shadow:0 2px 10px rgba(15,44,91,.06)}
+.htile .k{font-size:11px;color:var(--quiet);text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+.htile .v{font-size:20px;font-weight:800;margin-top:4px}
+.htile .s{font-size:12px;color:var(--quiet);margin-top:2px}
+.htile.hot{border-color:#ffd43b;background:#fffbea}
+.htile.wide2{grid-column:1 / -1;background:linear-gradient(135deg,#0b2a5b,#16408a);color:#fff;border:0}
+.htile.wide2 .k,.htile.wide2 .s{color:#cbd5e1}
+.shoprow .amt{font-weight:800;white-space:nowrap}
+.ufhero{display:flex;gap:14px;align-items:center;padding:16px;background:#fff;border-bottom:1px solid var(--line)}
+.ufn{font-size:20px;font-weight:800}
+.ufm{font-size:13px;color:var(--quiet);margin-top:1px}
+.ufp{margin-top:6px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.ufbal{font-weight:800}
+.uftabs{background:#fff;padding:10px 16px 12px;border-bottom:1px solid var(--line);position:sticky;top:52px;z-index:4}
+.ivlines{margin-top:8px;border-top:1px solid var(--line)}
 /* e2: leases and charges */
 .tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .tile{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 12px}
@@ -218,7 +246,7 @@ input[type=date]{-webkit-appearance:none;appearance:none;min-height:44px}
 <script>
 (function(){
 'use strict';
-var ESM_BUILD = 'ESM e5';
+var ESM_BUILD = 'ESM e6';
 var MODE = 'shop';   // Block 1 = 'shop' (index.html: shoppers + tenants) · Block 2 = 'office' (office.html). Set by build_esm.py.
 var SB_URL = 'https://pqduivcxwykcixqsfrwi.supabase.co';
 var SB_KEY = 'sb_publishable_Cl8uDRrLqx9VMaC3lifpWA_Wl91vVy2';   // OTR-Tennis public (publishable) key
@@ -385,7 +413,7 @@ function pageDoor(){
       (c.phone ? '<b>Phone</b><a href="tel:' + esc(c.phone.replace(/\s/g,'')) + '">' + esc(c.phone) + '</a>' : '') +
       (c.address ? '<b>Address</b><span>' + esc(c.address) + '</span>' : '') +
       '</div><div class="row" style="margin-top:12px"><div class="ph" style="flex-basis:100%;height:110px">map — to come</div></div></div></section>' +
-    '<div class="foot">' + ESM_BUILD + ' · <a href="office.html' + (CID ? '?c=' + CID : '') + '" class="offlink">Centre office</a></div>';
+    '<div class="foot">' + ESM_BUILD + '</div>';
   $('goSpecials').onclick = function(){ $('secSpecials').scrollIntoView({ behavior:'smooth' }); };
   $('dCats').onclick = function(e){ var t = e.target.closest('[data-dcat]'); if (!t) return;
     var k = t.getAttribute('data-dcat'); DOOR_CAT = (k === 'All' ? '' : k); var y = window.scrollY; pageDoor(); window.scrollTo(0, y); };
@@ -539,7 +567,7 @@ function askIn(slot, q, yes, act){
   };
 }
 
-var OWNER_TAB = 'approve';
+var OWNER_TAB = 'home';
 function pageOwner(note){
   var s = sess();
   if (!s || s.role !== 'owner') { go('#login/owner'); return; }
@@ -548,6 +576,7 @@ function pageOwner(note){
     if (!r.ok) { setSess(null); bar(); APP.innerHTML = mini('Centre office', null) + '<div class="pad"><div class="msg err">' + esc(r.msg) + '</div></div>'; return; }
     APP.innerHTML = mini('Centre office · ' + r.centre.name, null) +
       '<div class="tabs">' +
+        '<div class="tab' + (OWNER_TAB === 'home' ? ' on' : '') + '" data-tab="home">🏠 Home</div>' +
         '<div class="tab' + (OWNER_TAB === 'approve' ? ' on' : '') + '" data-tab="approve">To approve' + (r.pending.length ? '<span class="cnt">' + r.pending.length + '</span>' : '') + '</div>' +
         '<div class="tab' + (OWNER_TAB === 'shops' ? ' on' : '') + '" data-tab="shops">Shops</div>' +
         '<div class="tab' + (OWNER_TAB === 'leases' ? ' on' : '') + '" data-tab="leases">Leases</div>' +
@@ -557,10 +586,12 @@ function pageOwner(note){
         '<div class="tab' + (OWNER_TAB === 'centre' ? ' on' : '') + '" data-tab="centre">Centre</div>' +
       '</div><div class="pad" id="ow"></div>';
     APP.querySelector('.tabs').onclick = function(e){ var t = e.target.closest('[data-tab]'); if (!t) return;
-      OWNER_TAB = t.getAttribute('data-tab'); pageOwner(); };
+      go('#tab/' + t.getAttribute('data-tab')); };
     var box = $('ow');
     var top = note ? '<div class="msg ok">' + esc(note) + '</div>' : '';
-    if (OWNER_TAB === 'approve') ownerApprove(box, r, s, top);
+    LAST_TAB = OWNER_TAB;
+    if (OWNER_TAB === 'home') ownerHome(box, r, s, top);
+    else if (OWNER_TAB === 'approve') ownerApprove(box, r, s, top);
     else if (OWNER_TAB === 'shops') ownerShops(box, r, s, top);
     else if (OWNER_TAB === 'leases') ownerLeases(box, s, top);
     else if (OWNER_TAB === 'charges') ownerCharges(box, s, top);
@@ -638,7 +669,7 @@ function ownerShops(box, r, s, top){
   box.innerHTML = top + '<div class="b main wide" style="margin-top:0" id="add">Add a shop</div><div id="addSlot"></div>' +
     '<div class="h3">' + r.units.length + ' shops</div>' +
     r.units.map(function(u){
-      return '<div class="item" data-u="' + u.id + '"><div style="display:flex;gap:12px;align-items:center">' + logoBox(u, 48) + '<div><div class="ti">' + esc(u.name) + '</div>' +
+      return '<div class="item" data-u="' + u.id + '"><div style="display:flex;gap:12px;align-items:center;cursor:pointer" data-go="#unit/' + u.id + '/shop">' + logoBox(u, 48) + '<div><div class="ti">' + esc(u.name) + ' <span class="lnk2" style="font-size:13px">Open ›</span></div>' +
         '<div class="mt">' + [u.category, u.location, u.hours, u.phone].filter(Boolean).map(esc).join(' · ') + '</div></div></div>' +
         '<div class="mt">Shop code: <span class="code">' + esc(u.code || '—') + '</span></div>' +
         '<div class="btns"><div class="b sm" data-ed="' + u.id + '">Change</div><div class="b sm" data-nc="' + u.id + '">New code</div>' +
@@ -723,7 +754,7 @@ var METHODS = { fixed:'Fixed amount', per_m2:'Rate per m²', share:'Share by are
 function money(cur, n){
   if (n == null || isNaN(n)) return '—';
   var neg = n < 0, p = Math.abs(Math.round(n * 100) / 100).toFixed(2).split('.');
-  return (neg ? '-' : '') + cur + ' ' + p[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + '.' + p[1];
+  return (neg ? '-' : '') + cur + ' ' + p[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + '.' + p[1];   // non-breaking spaces: an amount never splits over two lines
 }
 function niceY(s){ var d = ymd(s); return d.getUTCDate() + ' ' + MONTHS[d.getUTCMonth()] + ' ' + d.getUTCFullYear(); }
 function numStr(n){ return n == null ? '' : String(+n); }
@@ -843,19 +874,16 @@ function ownerLeases(box, s, top){
           (u.spaces.length > 1 ? '<div class="mt">' + esc(spacesText(u)) + '</div>' : '') +
           (c ? '<div class="mt">' + niceY(l.start_on) + ' to ' + (l.end_on ? niceY(l.end_on) : 'no end date') + '</div>' : '') +
           '</div><div style="text-align:right">' + (c ? '<div class="amt">' + money(cur, c.rent) + '</div>' + leasePill(c, l) : '<span class="st empty">Empty</span>') +
-          '</div></div>' + (MGMT_OPEN === u.id ? unitCard(D, u, l, T) : '') + '</div>';
+          '</div></div></div>';
       }).join('') +
       '<div class="btns" style="margin-top:14px"><div class="b" id="addUnit">Add an empty unit</div><div class="b" id="csv">Export to Excel</div></div>' +
       '<div id="addUnitSlot"></div>' +
       '<div class="b wide" id="out">Log out</div>';
     box.innerHTML = html;
-    if (MGMT_OPEN) { var open = box.querySelector('[data-u="' + MGMT_OPEN + '"]'); if (open) { wireUnitCard(D, open, s, T); } }
     box.onclick = function(e){
       var t;
       if ((t = e.target.closest('[data-open]'))) {
-        var id = Number(t.getAttribute('data-open'));
-        MGMT_OPEN = (MGMT_OPEN === id ? null : id); ownerLeases(box, s, top);
-        if (MGMT_OPEN) setTimeout(function(){ var el = box.querySelector('[data-u="' + id + '"]'); if (el) el.scrollIntoView({ block: 'start' }); }, 30);
+        go('#unit/' + t.getAttribute('data-open') + '/lease');
       } else if (e.target.id === 'addUnit') {
         $('addUnitSlot').innerHTML = '<div class="box" style="margin-top:10px"><div style="font-weight:700">Add an empty unit</div>' +
           '<div class="hint">It is not on the door until a lease is added.</div>' +
@@ -869,7 +897,7 @@ function ownerLeases(box, s, top){
           if (a != null && isNaN(a)) { $('nuMsg').className = 'msg err'; $('nuMsg').textContent = 'The size must be a number.'; return; }
           rpc('ctr_space_save', { p_centre: CID, p_code: s.code, p_unit: null, p_name: $('nuName').value, p_location: $('nuLoc').value, p_area: a }).then(function(x){
             if (!x.ok) { $('nuMsg').className = 'msg err'; $('nuMsg').textContent = x.msg; return; }
-            MGMT_OPEN = x.id; pageOwner('Empty unit added. Add its lease when a tenant signs.');
+            go('#unit/' + x.id + '/lease');
           });
         };
       } else if (e.target.id === 'csv') { rentRollCsv(D, T);
@@ -878,10 +906,11 @@ function ownerLeases(box, s, top){
   });
 }
 
-function unitCard(D, u, l, T){
+function unitCard(D, u, l, T, mode){
   var cur = D.centre.currency, vac = u.vacant || !l, L = l || {};
   var f = function(k){ return esc(L[k] == null ? '' : L[k]); };
-  return '<div class="box" style="margin-top:10px;cursor:default" data-card>' +
+  var leasePart = mode !== 'charges', chargePart = mode !== 'lease';
+  return '<div class="box" style="margin-top:10px;cursor:default" data-card>' + (leasePart ? (
     '<div class="sub" style="margin-top:0">The space</div>' +
     (vac ? '<label>Unit name</label><input data-s="name" maxlength="60" value="' + esc(u.name) + '">' : '') +
     '<label>Where</label><input data-s="location" maxlength="40" value="' + esc(u.location) + '">' +
@@ -910,10 +939,10 @@ function unitCard(D, u, l, T){
       return '<option' + (L.deposit_kind === k ? ' selected' : '') + '>' + k + '</option>'; }).join('') + '</select>' +
     '<label>Notes</label><textarea data-l="notes" maxlength="500">' + f('notes') + '</textarea>' +
     '<div class="hint" data-calc></div>' +
-    '<div class="btns"><div class="b sm main" data-save>Save</div><div class="b sm" data-close>Close</div>' +
+    '<div class="btns"><div class="b sm main" data-save>Save</div>' +
       (!vac ? '<div class="b sm no" data-leave>Tenant leaves</div>' : '') + '</div>' +
-    '<div class="slot"></div><div class="msg" data-m></div>' +
-    '<div class="sub">Charges for this shop</div><div class="hint">Each charge is the same as the centre unless you change it here.</div>' +
+    '<div class="slot"></div><div class="msg" data-m></div>') : '') + (chargePart ? (
+    '<div class="sub"' + (leasePart ? '' : ' style="margin-top:0"') + '>Charges for this shop</div><div class="hint">Each charge is the same as the centre unless you change it here.</div>' +
     D.charges.map(function(ct){
       var r = chargeRow(D, u, ct), m = r.method || '';
       return '<div class="crow" data-ch="' + ct.id + '"><div class="hd"><span class="nm">' + esc(ct.name) + '</span>' +
@@ -925,13 +954,14 @@ function unitCard(D, u, l, T){
         '<input type="text" data-c="meter_no" maxlength="40" placeholder="Meter number" value="' + esc(r.meter_no || '') + '">' +
         '<div class="est"></div></div>';
     }).join('') +
-    '<div class="btns"><div class="b sm main" data-csave>Save charges</div></div><div class="msg" data-cm></div>' +
+    '<div class="btns"><div class="b sm main" data-csave>Save charges</div></div><div class="msg" data-cm></div>') : '') +
   '</div>';
 }
 
-function wireUnitCard(D, wrap, s, T){
-  var card = wrap.querySelector('[data-card]'), u = D.units.filter(function(x){ return x.id === MGMT_OPEN; })[0];
+function wireUnitCard(D, wrap, s, T, u, done){
+  var card = wrap.querySelector('[data-card]');
   var l = T.leaseOf[u.id], cur = D.centre.currency;
+  done = done || function(msg){ pageOwner(msg); };
   card.onclick = function(e){ e.stopPropagation(); };
   function val(sel){ var el = card.querySelector(sel); return el ? el.value : ''; }
   // the spaces as typed on the card
@@ -941,8 +971,10 @@ function wireUnitCard(D, wrap, s, T){
       return { type_id: t ? t.id : null, type: t, area_m2: toNum(r.querySelector('[data-sp=area]').value), rate: toNum(r.querySelector('[data-sp=rate]').value) };
     });
   }
-  function cardUnit(){ var sp = readSpaces(); return { id: u.id, spaces: sp, area_m2: rentableOf(sp) }; }
+  function cardUnit(){ if (!card.querySelector('.sprow') && !card.querySelector('[data-spaces]')) return { id: u.id, spaces: u.spaces, area_m2: +u.area_m2 || 0 };
+    var sp = readSpaces(); return { id: u.id, spaces: sp, area_m2: rentableOf(sp) }; }
   function showCalc(){
+    if (!card.querySelector('[data-calc]')) return;
     var cu = cardUnit(), L = { rent_basis: val('[data-l=rent_basis]'), rent_value: toNum(val('[data-l=rent_value]')),
       increase_pct: toNum(val('[data-l=increase_pct]')) || 0, start_on: val('[data-l=start_on]'), end_on: val('[data-l=end_on]') };
     card.querySelector('[data-rvwrap]').style.display = L.rent_basis === 'spaces' ? 'none' : '';
@@ -959,7 +991,7 @@ function wireUnitCard(D, wrap, s, T){
       r.querySelector('[data-spdel]').onclick = function(){ r.remove(); showCalc(); card.querySelectorAll('.crow').forEach(paintRow); };
     });
   }
-  card.querySelector('[data-addsp]').onclick = function(){
+  if (card.querySelector('[data-addsp]')) card.querySelector('[data-addsp]').onclick = function(){
     card.querySelector('[data-spaces]').insertAdjacentHTML('beforeend', spaceRow(D, { type_id: (D.space_types[0] || {}).id, area_m2: null, rate: null }));
     wireSpaces(); showCalc();
   };
@@ -984,8 +1016,7 @@ function wireUnitCard(D, wrap, s, T){
     row.querySelectorAll('[data-c]').forEach(function(el){ el.onchange = function(){ paintRow(row); }; el.oninput = el.onchange; });
     paintRow(row);
   });
-  card.querySelector('[data-close]').onclick = function(){ MGMT_OPEN = null; pageOwner(); };
-  card.querySelector('[data-save]').onclick = function(){
+  if (card.querySelector('[data-save]')) card.querySelector('[data-save]').onclick = function(){
     var m = card.querySelector('[data-m]'); m.className = 'msg'; m.textContent = 'Saving…';
     var sp = readSpaces();
     for (var i = 0; i < sp.length; i++) {
@@ -1000,10 +1031,10 @@ function wireUnitCard(D, wrap, s, T){
     }).then(function(x){
       if (!x) return;
       if (!x.ok) { m.className = 'msg err'; m.textContent = x.msg; return; }
-      if ((u.vacant || !l) && !L.tenant_name.trim()) { pageOwner('Unit saved.'); return; }
+      if ((u.vacant || !l) && !L.tenant_name.trim()) { done('Unit saved.'); return; }
       rpc('ctr_lease_save', { p_centre: CID, p_code: s.code, p_unit: u.id, p_lease: L }).then(function(y){
         if (!y.ok) { m.className = 'msg err'; m.textContent = y.msg; return; }
-        pageOwner(y.code ? 'Lease saved. ' + L.shop_name + ' is on the door; its shop code is ' + y.code + '.' : 'Lease saved.');
+        done(y.code ? 'Lease saved. ' + L.shop_name + ' is on the door; its shop code is ' + y.code + '.' : 'Lease saved.');
       });
     });
   };
@@ -1017,11 +1048,11 @@ function wireUnitCard(D, wrap, s, T){
     slot.querySelector('[data-y]').onclick = function(){
       rpc('ctr_lease_end', { p_centre: CID, p_code: s.code, p_lease: l.id, p_ended_on: slot.querySelector('[data-end]').value || null }).then(function(x){
         if (!x.ok) { var mm = slot.querySelector('[data-mm]'); mm.className = 'msg err'; mm.textContent = x.msg; return; }
-        pageOwner('Lease closed. ' + u.name + ' is now an empty unit.');
+        done('Lease closed. ' + u.name + ' is now an empty unit.');
       });
     };
   };
-  card.querySelector('[data-csave]').onclick = function(){
+  if (card.querySelector('[data-csave]')) card.querySelector('[data-csave]').onclick = function(){
     var cm = card.querySelector('[data-cm]'), jobs = [];
     var rows = Array.prototype.slice.call(card.querySelectorAll('.crow'));
     for (var i = 0; i < rows.length; i++) {
@@ -1035,7 +1066,7 @@ function wireUnitCard(D, wrap, s, T){
     if (!jobs.length) { cm.className = 'msg ok'; cm.textContent = 'Nothing changed.'; return; }
     cm.className = 'msg'; cm.textContent = 'Saving…';
     (function next(i){
-      if (i >= jobs.length) { pageOwner('Charges saved for ' + u.name + '.'); return; }
+      if (i >= jobs.length) { done('Charges saved for ' + u.name + '.'); return; }
       rpc('ctr_unit_charge_save', jobs[i]).then(function(x){
         if (!x.ok) { cm.className = 'msg err'; cm.textContent = x.msg; return; }
         next(i + 1);
@@ -1490,7 +1521,7 @@ function drawBilling(box, s, top, D, B){
                 (+l.vat_rate ? '<div class="est">+ VAT ' + money(cur, +l.vat) + '</div>' : '<div class="est">no VAT</div>') + '</div>'; }).join('') +
             '<div class="crow"><div class="hd"><b>Total incl. VAT</b><b>' + money(cur, +i.total) + '</b></div></div>' +
             '<div class="btns"><div class="b sm main" data-ipdf="share">' + (i.status === 'draft' ? 'Draft PDF' : 'Send PDF') + '</div><div class="b sm" data-ipdf="save">Download</div>' +
-            (i.status === 'sent' ? '<div class="b sm no" data-ivoid>Cancel invoice</div>' : '') + '</div><div class="slot"></div><div class="msg" data-im></div></div>' : '') +
+            (i.status === 'sent' ? '<div class="b sm no" data-ivoid>Cancel invoice</div>' : '') + '<div class="b sm" data-go="#unit/' + i.unit_id + '/overview">Open the shop page ›</div></div><div class="slot"></div><div class="msg" data-im></div></div>' : '') +
         '</div>';
       }).join('');
     if (!sent) html += '<div class="b ok wide" id="blSend">Send all ' + invs.length + ' invoices</div><div class="slot" id="blSendSlot"></div>';
@@ -1619,37 +1650,41 @@ function ownerStatements(box, s, top){
       }).join('') +
       '<div class="b wide" id="out">Log out</div>';
     box.querySelectorAll('[data-sopen]').forEach(function(el){ el.onclick = function(){
-      var id = Number(el.getAttribute('data-sopen')); ST_OPEN = ST_OPEN === id ? null : id; ownerStatements(box, s, '');
+      var id = Number(el.getAttribute('data-sopen')), x = rows.filter(function(r){ return r.l.id === id; })[0];
+      if (x && !x.l.ended_on) { go('#unit/' + x.l.unit_id + '/statement'); return; }   // current tenants: their own page
+      ST_OPEN = ST_OPEN === id ? null : id; ownerStatements(box, s, '');
     }; });
     var card = box.querySelector('[data-scard]');
-    if (card) {
-      var x = rows.filter(function(r){ return r.l.id === ST_OPEN; })[0], sm = card.querySelector('[data-sm]');
-      card.querySelectorAll('[data-spdf]').forEach(function(b){ b.onclick = function(){
-        withPdf(sm, function(){ return pdfOut(buildStatementPdf(x.l, x.L, lh, today), ('Statement ' + x.l.tenant_name + ' ' + today).replace(/[\\/:*?"<>|]+/g, '-') + '.pdf',
-                                              'Statement ' + x.l.tenant_name, b.getAttribute('data-spdf'), sm); });
-      }; });
-      card.querySelectorAll('[data-rinv]').forEach(function(b){ b.onclick = function(){
-        var inv = S.invoices.filter(function(i){ return i.id === Number(b.getAttribute('data-rinv')); })[0];
-        withPdf(sm, function(){ return pdfOut(buildInvoicePdf(inv, lh), invoiceFileName(inv, lh), 'Invoice ' + inv.number, 'share', sm); });
-      }; });
-      card.querySelector('[data-padd]').onclick = function(){
-        var a = toNum(card.querySelector('[data-pa]').value);
-        if (a == null || isNaN(a)) { sm.className = 'msg err'; sm.textContent = 'Fill in the amount received.'; return; }
-        rpc('ctr_payment_add', { p_centre: CID, p_code: s.code, p_lease: x.l.id, p_paid_on: card.querySelector('[data-pd]').value || null, p_amount: a,
-            p_reference: card.querySelector('[data-pr]').value, p_note: null }).then(function(r){
-          if (!r.ok) { sm.className = 'msg err'; sm.textContent = r.msg; return; }
-          ownerStatements(box, s, '<div class="msg ok">Payment of ' + money(cur, a) + ' recorded for ' + esc(x.l.unit) + '.</div>');
-        });
-      };
-      card.querySelectorAll('[data-pdel]').forEach(function(b){ b.onclick = function(){
-        var pid = Number(b.getAttribute('data-pdel'));
-        askIn(card.querySelector('.slot'), 'Remove this payment?', 'Yes, remove it', function(){
-          return rpc('ctr_payment_remove', { p_centre: CID, p_code: s.code, p_id: pid }).then(function(r){ if (r.ok) ownerStatements(box, s, '<div class="msg ok">Payment removed.</div>'); return r; });
-        });
-      }; });
-    }
+    if (card) wireStCard(card, S, rows.filter(function(r){ return r.l.id === ST_OPEN; })[0], s, function(msg){ ownerStatements(box, s, '<div class="msg ok">' + esc(msg) + '</div>'); });
     $('out').onclick = function(){ setSess(null); bar(); go('#'); };
   });
+}
+// the statement card's buttons: statement PDF, invoice PDFs, record / remove a payment
+function wireStCard(card, S, x, s, done){
+  var lh = S.letterhead, cur = lh.currency, today = S.today, sm = card.querySelector('[data-sm]');
+  card.querySelectorAll('[data-spdf]').forEach(function(b){ b.onclick = function(){
+    withPdf(sm, function(){ return pdfOut(buildStatementPdf(x.l, x.L, lh, today), ('Statement ' + x.l.tenant_name + ' ' + today).replace(/[\\/:*?"<>|]+/g, '-') + '.pdf',
+                                          'Statement ' + x.l.tenant_name, b.getAttribute('data-spdf'), sm); });
+  }; });
+  card.querySelectorAll('[data-rinv]').forEach(function(b){ b.onclick = function(){
+    var inv = S.invoices.filter(function(i){ return i.id === Number(b.getAttribute('data-rinv')); })[0];
+    withPdf(sm, function(){ return pdfOut(buildInvoicePdf(inv, lh), invoiceFileName(inv, lh), 'Invoice ' + inv.number, 'share', sm); });
+  }; });
+  card.querySelector('[data-padd]').onclick = function(){
+    var a = toNum(card.querySelector('[data-pa]').value);
+    if (a == null || isNaN(a)) { sm.className = 'msg err'; sm.textContent = 'Fill in the amount received.'; return; }
+    rpc('ctr_payment_add', { p_centre: CID, p_code: s.code, p_lease: x.l.id, p_paid_on: card.querySelector('[data-pd]').value || null, p_amount: a,
+        p_reference: card.querySelector('[data-pr]').value, p_note: null }).then(function(r){
+      if (!r.ok) { sm.className = 'msg err'; sm.textContent = r.msg; return; }
+      done('Payment of ' + money(cur, a) + ' recorded for ' + x.l.unit + '.');
+    });
+  };
+  card.querySelectorAll('[data-pdel]').forEach(function(b){ b.onclick = function(){
+    var pid = Number(b.getAttribute('data-pdel'));
+    askIn(card.querySelector('.slot'), 'Remove this payment?', 'Yes, remove it', function(){
+      return rpc('ctr_payment_remove', { p_centre: CID, p_code: s.code, p_id: pid }).then(function(r){ if (r.ok) done('Payment removed.'); return r; });
+    });
+  }; });
 }
 function stCard(l, L, cur, today){
   return '<div class="box" style="margin-top:10px;cursor:default" data-scard>' +
@@ -1694,6 +1729,240 @@ function shopAccount(el, s){
   });
 }
 
+// =====================================================================
+// e6 · THE CENTRE OFFICE: office login, office home, a page per shop ("shop file")
+// =====================================================================
+var LAST_TAB = 'home';
+
+function officeLogin(){
+  if (!DOOR) { APP.innerHTML = '<div class="loading">Loading…</div>'; loadDoor().then(function(){ officeLogin(); }); return; }
+  var c = DOOR.centre;
+  APP.innerHTML = '<div class="offwrap"><div class="offcard">' +
+      '<div class="officon">🏢</div>' +
+      '<div class="offname">' + esc(c.name) + '</div>' +
+      '<div class="offtitle">Centre Office</div>' +
+      '<div class="offsub">For the owner and the centre manager</div>' +
+      '<label for="code" style="color:#cbd5e1">Owner code</label>' +
+      '<input id="code" inputmode="numeric" maxlength="6" autocomplete="off" placeholder="6 digits">' +
+      '<div class="b wide offbtn" id="open">Open the office</div><div class="msg" id="m"></div>' +
+    '</div>' +
+    '<div class="offhint"><b>Keep the office on your phone like an app</b><br>' +
+      'iPhone (Safari): tap Share <span class="kbd">⬆</span> then <b>Add to Home Screen</b>.<br>' +
+      'Android (Chrome): tap <span class="kbd">⋮</span> then <b>Add to Home screen</b> or <b>Install app</b>.</div>' +
+    '<div class="foot" style="color:#94a3b8">' + ESM_BUILD + '</div></div>';
+  function open(){
+    var code = $('code').value.trim();
+    if (!/^\d{6}$/.test(code)) { $('m').className = 'msg err'; $('m').textContent = 'The code is 6 digits.'; return; }
+    $('m').className = 'msg'; $('m').textContent = 'Checking…';
+    rpc('ctr_login', { p_centre: CID, p_code: code }).then(function(r){
+      if (!r.ok) { $('m').className = 'msg err'; $('m').textContent = r.msg; return; }
+      if (r.role !== 'owner') { $('m').className = 'msg err'; $('m').textContent = 'That is a shop code. Shops log in on the centre\'s shop page, not in the office.'; return; }
+      setSess({ role: 'owner', code: code }); go('#tab/home');
+    });
+  }
+  $('open').onclick = open;
+  $('code').onkeydown = function(e){ if (e.key === 'Enter') open(); };
+}
+
+function balPill(L){
+  if (!L) return '';
+  if (L.balance > 0.004) return L.age.d30 + L.age.d60 + L.age.d90 > 0 ? '<span class="st rejected">Behind</span>' : '<span class="st pending">Owes</span>';
+  if (L.balance < -0.004) return '<span class="st approved">In credit</span>';
+  return '<span class="st approved">Paid up</span>';
+}
+
+// ---------- office home: the big numbers and every shop ----------
+function ownerHome(box, r, s, top){
+  box.innerHTML = '<div class="loading">Loading…</div>';
+  var thisMonth = null;
+  mgmtLoad(s).then(function(D){
+    if (!D.ok) { box.innerHTML = '<div class="msg err">' + esc(D.msg) + '</div>'; return; }
+    thisMonth = monthStart(D.today);
+    return Promise.all([D, rpc('ctr_statements_home', { p_centre: CID, p_code: s.code }), rpc('ctr_billing_home', { p_centre: CID, p_code: s.code, p_period: thisMonth })]);
+  }).then(function(all){
+    if (!all) return;
+    var D = all[0], S = all[1], B = all[2], cur = D.centre.currency, today = D.today, T = mgmtTotals(D);
+    var logoOf = {}; r.units.forEach(function(u){ logoOf[u.id] = u; });
+    var balOf = {}, owed = 0, late = 0;
+    (S.ok ? S.leases : []).forEach(function(l){
+      var L = ledger(S.invoices.filter(function(i){ return i.lease_id === l.id; }), S.payments.filter(function(p){ return p.lease_id === l.id; }), today);
+      if (!l.ended_on) balOf[l.id] = L;
+      owed += Math.max(0, L.balance); late += L.age.d30 + L.age.d60 + L.age.d90;
+    });
+    var roll = 0, ending = 0, past = 0;
+    D.units.forEach(function(u){ var l = T.leaseOf[u.id]; if (u.vacant || !l) return; var c = leaseCalc(l, u, today);
+      if (c.state !== 'starts') roll += c.rent; if (c.state === 'ending') ending++; if (c.state === 'past') past++; });
+    var bill = B && B.ok ? (B.run ? (B.run.status === 'sent' ? 'Sent ✓' : 'Drafts made') : 'Not made yet') : '—';
+    var occ = T.all ? Math.round(T.let_ / T.all * 100) : 0;
+    box.innerHTML = top +
+      '<div class="hometiles">' +
+        '<div class="htile" data-go="#tab/statements"><div class="k">Owed to the centre</div><div class="v">' + money(cur, r2(owed)) + '</div><div class="s">' + money(cur, r2(late)) + ' is 30+ days</div></div>' +
+        '<div class="htile" data-go="#tab/leases"><div class="k">Rent roll</div><div class="v">' + money(cur, r2(roll)) + '</div><div class="s">a month · ' + occ + '% let</div></div>' +
+        '<div class="htile' + (r.pending.length ? ' hot' : '') + '" data-go="#tab/approve"><div class="k">Specials to approve</div><div class="v">' + r.pending.length + '</div><div class="s">' + r.running.length + ' on the door</div></div>' +
+        '<div class="htile' + (past ? ' hot' : '') + '" data-go="#tab/leases"><div class="k">Leases</div><div class="v">' + ending + ' ending</div><div class="s">' + past + ' past their end</div></div>' +
+        '<div class="htile wide2" data-go="#tab/billing"><div class="k">Billing · ' + monthName(thisMonth) + '</div><div class="v">' + bill + '</div><div class="s">Tap to make, check and send the month\'s invoices</div></div>' +
+      '</div>' +
+      '<div class="h3">Shops</div><div class="hint" style="margin-top:0">Tap a shop to open its own page.</div>' +
+      D.units.map(function(u){
+        var l = T.leaseOf[u.id], L = l ? balOf[l.id] : null, ou = logoOf[u.id] || u;
+        return '<div class="shoprow" data-go="#unit/' + u.id + '/' + (u.vacant || !l ? 'lease' : 'overview') + '">' + logoBox(ou, 44) +
+          '<div style="min-width:0"><div class="nm">' + esc(u.name) + '</div><div class="mt">' + (u.vacant || !l ? 'Empty · ' + m2s(u.area_m2) : esc(l.tenant_name)) + '</div></div>' +
+          '<div style="margin-left:auto;text-align:right">' + (L ? '<div class="amt">' + money(cur, L.balance) + '</div>' + balPill(L) : '<span class="st empty">Empty</span>') + '</div></div>';
+      }).join('') +
+      '<div class="b wide" id="out">Log out</div>';
+    $('out').onclick = function(){ setSess(null); go('#'); };
+  });
+}
+
+// ---------- a page per shop ----------
+var UF_SECS = [['overview','Overview'],['lease','Lease & spaces'],['charges','Charges'],['invoices','Invoices'],['statement','Statement'],['shop','Shop']];
+function pageUnit(id, sec, note){
+  var s = sess();
+  if (!s || s.role !== 'owner') { go('#login/owner'); return; }
+  APP.innerHTML = mini('Shop', '#tab/' + LAST_TAB) + '<div class="loading">Loading…</div>';
+  Promise.all([rpc('ctr_owner_home', { p_centre: CID, p_code: s.code }), mgmtLoad(s), rpc('ctr_statements_home', { p_centre: CID, p_code: s.code })]).then(function(all){
+    var r = all[0], D = all[1], S = all[2];
+    if (!r.ok || !D.ok || !S.ok) { APP.innerHTML = mini('Shop', '#tab/' + LAST_TAB) + '<div class="pad"><div class="msg err">' + esc((r.ok ? (D.ok ? S : D) : r).msg) + '</div></div>'; return; }
+    var T = mgmtTotals(D), u = D.units.filter(function(x){ return x.id === id; })[0];
+    if (!u) { APP.innerHTML = mini('Shop', '#tab/' + LAST_TAB) + '<div class="pad empty">This unit is not in the centre any more.</div>'; return; }
+    var ou = r.units.filter(function(x){ return x.id === id; })[0], l = T.leaseOf[id], vac = u.vacant || !l;
+    var cur = D.centre.currency, today = D.today, lh = S.letterhead;
+    var sl = l ? S.leases.filter(function(x){ return x.id === l.id; })[0] : null;
+    var invs = l ? S.invoices.filter(function(i){ return i.lease_id === l.id; }) : [], pays = l ? S.payments.filter(function(p){ return p.lease_id === l.id; }) : [];
+    var L = l ? ledger(invs, pays, today) : null, c = l ? leaseCalc(l, u, today) : null;
+    var secs = UF_SECS.filter(function(x){ return !(vac && (x[0] === 'shop' || x[0] === 'invoices' || x[0] === 'statement' || x[0] === 'overview')); });
+    if (!secs.some(function(x){ return x[0] === sec; })) sec = secs[0][0];
+    APP.innerHTML = mini(u.name, '#tab/' + LAST_TAB) +
+      '<div class="ufhero">' + logoBox(ou || u, 64) + '<div style="min-width:0"><div class="ufn">' + esc(u.name) + '</div>' +
+        '<div class="ufm">' + (vac ? 'Empty unit · ' + m2s(u.area_m2) : esc(l.tenant_name)) + '</div>' +
+        '<div class="ufp">' + (L ? '<span class="ufbal">' + money(cur, L.balance) + '</span> ' + balPill(L) + ' ' : '') + (c ? leasePill(c, l) : '') + '</div></div></div>' +
+      '<div class="tabs uftabs">' + secs.map(function(x){ return '<div class="tab' + (x[0] === sec ? ' on' : '') + '" data-go="#unit/' + id + '/' + x[0] + '">' + x[1] + '</div>'; }).join('') + '</div>' +
+      '<div class="pad" id="uf">' + (note ? '<div class="msg ok" style="margin-bottom:10px">' + esc(note) + '</div>' : '') + '</div>';
+    var box = $('uf'), done = function(msg){ pageUnit(id, sec, msg); };
+    function add(html){ box.insertAdjacentHTML('beforeend', html); }
+
+    if (sec === 'overview') {
+      var info = function(k, v){ return v ? '<b>' + k + '</b><span>' + v + '</span>' : ''; };
+      add('<div class="tiles">' +
+          '<div class="tile"><div class="k">' + (L.balance < 0 ? 'In credit' : 'Balance') + '</div><div class="v">' + money(cur, Math.abs(L.balance)) + '</div><div class="s">' + (L.age.d30 + L.age.d60 + L.age.d90 > 0 ? money(cur, r2(L.age.d30 + L.age.d60 + L.age.d90)) + ' is 30+ days' : 'nothing overdue') + '</div></div>' +
+          '<div class="tile"><div class="k">Rent now</div><div class="v">' + money(cur, c.rent) + '</div><div class="s">a month, excl. VAT</div></div>' +
+          '<div class="tile"><div class="k">Lease ends</div><div class="v" style="font-size:16px">' + (l.end_on ? niceY(l.end_on) : 'No end date') + '</div><div class="s">' + (c.toEnd != null ? (c.toEnd < 0 ? 'ended ' + (-c.toEnd) + ' days ago' : 'in ' + c.toEnd + ' days') : '') + '</div></div>' +
+          '<div class="tile"><div class="k">Rentable</div><div class="v">' + m2s(u.area_m2) + '</div><div class="s">' + esc(spacesText(u)) + '</div></div></div>' +
+        '<div class="h3">Tenant</div><div class="box"><div class="info">' +
+          info('Company', esc(l.tenant_name)) + info('Contact', esc(l.contact || '')) +
+          info('Phone', l.phone ? '<a href="tel:' + esc(l.phone.replace(/\s/g, '')) + '">' + esc(l.phone) + '</a>' : '') +
+          info('Email', l.email ? '<a href="mailto:' + esc(l.email) + '">' + esc(l.email) + '</a>' : '') + info('VAT no.', esc(l.vat_no || '')) + '</div></div>' +
+        '<div class="h3">Lease</div><div class="box"><div class="info">' +
+          info('Runs', niceY(l.start_on) + ' to ' + (l.end_on ? niceY(l.end_on) : 'no end date')) +
+          info('Rent', l.rent_basis === 'spaces' ? 'from the spaces' : l.rent_basis === 'm2' ? money(cur, +l.rent_value) + ' per m² at the start' : money(cur, +l.rent_value) + ' a month at the start') +
+          info('Increase', (+l.increase_pct) + '% a year' + (c.next ? ' · next ' + niceY(c.next) + ' to ' + money(cur, c.nextRent) : '')) +
+          info('Deposit', money(cur, +l.deposit) + (l.deposit_kind ? ' · ' + esc(l.deposit_kind) : '')) + '</div></div>' +
+        '<div class="h3">Money</div><div class="box"><div class="info">' +
+          info('Last invoice', invs.length ? esc(invs[invs.length - 1].number) + ' · ' + monthName(invs[invs.length - 1].period) + ' · ' + money(cur, +invs[invs.length - 1].total) : 'none yet') +
+          info('Last payment', pays.length ? niceY(pays[pays.length - 1].paid_on) + ' · ' + money(cur, +pays[pays.length - 1].amount) : 'none yet') +
+          info('By age', 'current ' + money(cur, L.age.cur) + ' · 30d ' + money(cur, L.age.d30) + ' · 60d ' + money(cur, L.age.d60) + ' · 90d+ ' + money(cur, L.age.d90)) + '</div>' +
+          '<div class="btns"><div class="b sm main" data-go="#unit/' + id + '/statement">Statement & payments</div><div class="b sm" data-go="#unit/' + id + '/invoices">Invoices</div></div></div>');
+    }
+    else if (sec === 'lease' || sec === 'charges') {
+      add('<div data-wrap>' + unitCard(D, u, l, T, sec) + '</div>');
+      wireUnitCard(D, box.querySelector('[data-wrap]'), s, T, u, done);
+    }
+    else if (sec === 'invoices') {
+      add('<div class="hint" style="margin-top:0">Sent invoices for this tenant, newest first. This month\'s drafts are on the Billing tab.</div>' +
+        (invs.length ? invs.slice().reverse().map(function(i){
+          return '<div class="item" data-iv="' + i.id + '"><div style="display:flex;justify-content:space-between;gap:8px"><div><div class="ti">' + esc(i.number) + ' · ' + monthName(i.period) + '</div>' +
+            '<div class="mt">' + (i.inv_date ? niceY(i.inv_date) : '') + '</div></div><div style="text-align:right"><div class="amt">' + money(cur, +i.total) + '</div>' +
+            (i.status === 'void' ? '<span class="st rejected">Cancelled</span>' : '<span class="st approved">Sent</span>') + '</div></div>' +
+            '<div class="ivlines">' + i.lines.map(function(x){ return '<div class="crow"><div class="hd"><span style="font-size:13px">' + esc(x.description) + '</span><b style="white-space:nowrap">' + money(cur, +x.amount) + '</b></div></div>'; }).join('') +
+            '<div class="crow"><div class="hd"><span>VAT</span><b>' + money(cur, +i.vat) + '</b></div></div></div>' +
+            '<div class="btns"><div class="b sm main" data-ipdf="share">Send PDF</div><div class="b sm" data-ipdf="save">Download</div>' +
+            (i.status === 'sent' ? '<div class="b sm no" data-ivoid>Cancel invoice</div>' : '') + '</div><div class="slot"></div><div class="msg" data-im></div></div>';
+        }).join('') : '<div class="box empty">No invoices sent to this tenant yet.</div>'));
+      box.querySelectorAll('[data-iv]').forEach(function(card){
+        var inv = invs.filter(function(i){ return i.id === Number(card.getAttribute('data-iv')); })[0], im = card.querySelector('[data-im]');
+        card.querySelectorAll('[data-ipdf]').forEach(function(b){ b.onclick = function(){
+          withPdf(im, function(){ return pdfOut(buildInvoicePdf(inv, lh), invoiceFileName(inv, lh), 'Tax invoice ' + inv.number, b.getAttribute('data-ipdf'), im); });
+        }; });
+        var vd = card.querySelector('[data-ivoid]');
+        if (vd) vd.onclick = function(){
+          var slot = card.querySelector('.slot');
+          slot.innerHTML = '<div class="ask">Cancel invoice ' + esc(inv.number) + '? It stays on record as cancelled and comes off the statement.' +
+            '<input data-why maxlength="200" style="margin-top:8px" placeholder="Reason, e.g. wrong rent">' +
+            '<div class="btns"><div class="b sm no" data-y>Yes, cancel it</div><div class="b sm" data-n>No</div></div><div class="msg" data-m></div></div>';
+          slot.querySelector('[data-n]').onclick = function(){ slot.innerHTML = ''; };
+          slot.querySelector('[data-y]').onclick = function(){
+            rpc('ctr_invoice_void', { p_centre: CID, p_code: s.code, p_id: inv.id, p_reason: slot.querySelector('[data-why]').value }).then(function(x){
+              if (!x.ok) { var mm = slot.querySelector('[data-m]'); mm.className = 'msg err'; mm.textContent = x.msg; return; }
+              done('Invoice ' + inv.number + ' cancelled.');
+            });
+          };
+        };
+      });
+    }
+    else if (sec === 'statement') {
+      add('<div data-wrap>' + stCard(sl, L, cur, today) + '</div>');
+      wireStCard(box.querySelector('[data-scard]'), S, { l: sl, L: L }, s, done);
+    }
+    else if (sec === 'shop') {
+      var mine = r.pending.concat(r.running).filter(function(x){ return x.unit_id === id; });
+      add('<div class="box" style="display:flex;gap:14px;align-items:center">' + logoBox(ou, 72) + '<div style="flex:1"><div style="font-weight:700">Logo</div>' +
+          '<div class="btns"><label class="b sm main">' + (ou && ou.logo ? 'Change logo' : 'Add logo') + '<input type="file" accept="image/*" id="ufLogo" style="display:none"></label>' +
+          (ou && ou.logo ? '<div class="b sm" id="ufNoLogo">No logo</div>' : '') + '</div><div class="slot" id="ufLogoSlot"></div></div></div>' +
+        '<div class="h3">On the door</div><div id="ufDoor">' + shopForm(ou) + '</div>' +
+        '<div class="h3">Shop code</div><div class="box"><div>The shop logs in with <span class="code">' + esc(ou && ou.code || '—') + '</span></div>' +
+          '<div class="btns"><div class="b sm" id="ufNewCode">Give a new code</div></div><div class="slot" id="ufCodeSlot"></div></div>' +
+        '<div class="h3">Specials</div>' +
+        (mine.length ? mine.map(function(x){
+          return '<div class="item" data-spc="' + x.id + '"><div style="display:flex;justify-content:space-between;gap:8px"><div class="ti">' + esc(x.title) + (x.price ? ' <span class="price">' + esc(x.price) + '</span>' : '') + '</div>' +
+            (x.status === 'pending' ? '<span class="st pending">Waiting</span>' : '<span class="st approved">On the door</span>') + '</div>' +
+            (x.detail ? '<div class="de">' + esc(x.detail) + '</div>' : '') + '<div class="mt">until ' + nice(x.ends_on) + '</div>' +
+            '<div class="btns">' + (x.status === 'pending' ? '<div class="b sm ok" data-ap>Approve</div><div class="b sm no" data-rj>Not approved</div>' : '<div class="b sm no" data-rm>Take off the door</div>') + '</div><div class="slot"></div></div>';
+        }).join('') : '<div class="box empty">No specials from this shop right now.</div>'));
+      var dd = $('ufDoor'); dd.querySelector('[data-cancel]').style.display = 'none';
+      dd.querySelector('[data-save]').onclick = function(){
+        var f = {}; dd.querySelectorAll('[data-f]').forEach(function(el){ f[el.getAttribute('data-f')] = el.value; });
+        var m = dd.querySelector('[data-m]'); m.className = 'msg'; m.textContent = 'Saving…';
+        rpc('ctr_unit_save', { p_centre: CID, p_code: s.code, p_id: id, p_name: f.name, p_category: f.category,
+            p_location: f.location, p_phone: f.phone, p_hours: f.hours, p_sort: parseInt(f.sort, 10) || 100 }).then(function(x){
+          if (!x.ok) { m.className = 'msg err'; m.textContent = x.msg; return; }
+          done('Saved. The door shows the new details.');
+        });
+      };
+      $('ufLogo').onchange = function(){
+        var sl2 = $('ufLogoSlot'); sl2.innerHTML = '<div class="msg">Preparing the logo…</div>';
+        fileToLogo($('ufLogo').files[0]).then(function(data){ return rpc('ctr_unit_logo_save', { p_centre: CID, p_code: s.code, p_unit: id, p_logo: data }); })
+          .then(function(x){ if (!x.ok) { sl2.innerHTML = '<div class="msg err">' + esc(x.msg) + '</div>'; return; } done('Logo saved. It shows on the door now.'); },
+                function(err){ sl2.innerHTML = '<div class="msg err">' + esc(String(err)) + '</div>'; });
+      };
+      if ($('ufNoLogo')) $('ufNoLogo').onclick = function(){
+        askIn($('ufLogoSlot'), 'Take the logo off ' + u.name + '?', 'Yes, no logo', function(){
+          return rpc('ctr_unit_logo_save', { p_centre: CID, p_code: s.code, p_unit: id, p_logo: null }).then(function(x){ if (x.ok) done('Logo removed.'); return x; });
+        });
+      };
+      $('ufNewCode').onclick = function(){
+        askIn($('ufCodeSlot'), 'Give ' + u.name + ' a new code? The old code stops working.', 'Yes, new code', function(){
+          return rpc('ctr_unit_newcode', { p_centre: CID, p_code: s.code, p_id: id }).then(function(x){ if (x.ok) done('New shop code: ' + x.code + '. Give it to the shop.'); return x; });
+        });
+      };
+      box.querySelectorAll('[data-spc]').forEach(function(card){
+        var sid = Number(card.getAttribute('data-spc')), slot = card.querySelector('.slot');
+        var ap = card.querySelector('[data-ap]'), rj = card.querySelector('[data-rj]'), rm = card.querySelector('[data-rm]');
+        if (ap) ap.onclick = function(){ rpc('ctr_special_decide', { p_centre: CID, p_code: s.code, p_id: sid, p_approve: true, p_reason: null }).then(function(x){
+          if (x.ok) done('Approved. It is on the door now.'); else slot.innerHTML = '<div class="msg err">' + esc(x.msg) + '</div>'; }); };
+        if (rj) rj.onclick = function(){
+          slot.innerHTML = '<div class="ask">Why not? (the shop sees this)<input data-why maxlength="200" style="margin-top:8px">' +
+            '<div class="btns"><div class="b sm no" data-y>Not approved</div><div class="b sm" data-n>Cancel</div></div></div>';
+          slot.querySelector('[data-n]').onclick = function(){ slot.innerHTML = ''; };
+          slot.querySelector('[data-y]').onclick = function(){ rpc('ctr_special_decide', { p_centre: CID, p_code: s.code, p_id: sid, p_approve: false, p_reason: slot.querySelector('[data-why]').value })
+            .then(function(x){ if (x.ok) done('Marked not approved. The shop can see why.'); }); };
+        };
+        if (rm) rm.onclick = function(){ askIn(slot, 'Take this special off the door?', 'Yes, take it off', function(){
+          return rpc('ctr_special_remove', { p_centre: CID, p_code: s.code, p_id: sid }).then(function(x){ if (x.ok) done('Taken off the door.'); return x; }); }); };
+      });
+    }
+  });
+}
+
 // ---------- router ----------
 function route(){
   var h = location.hash.replace(/^#/, '');
@@ -1709,8 +1978,11 @@ function route(){
   bar();
   if (MODE === 'office') {           // Block 2: the centre office only
     document.title = 'ESM Office';
-    if (h === 'login/owner') return pageLogin('owner');
-    OWNER_TAB = OWNER_TAB || 'approve'; return pageOwner();
+    if (h === 'login/owner') return officeLogin();
+    var mu = h.match(/^unit\/(\d+)(?:\/([a-z]+))?$/);
+    if (mu) return pageUnit(Number(mu[1]), mu[2] || 'overview');
+    var mt = h.match(/^tab\/([a-z]+)$/);
+    OWNER_TAB = mt ? mt[1] : 'home'; return pageOwner();
   }
   if (h === 'login/owner' || h === 'owner') { go('#'); return; }   // Block 1 has no owner login
   if (h === 'login/shop') return pageLogin('shop');
