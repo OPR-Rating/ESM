@@ -234,6 +234,20 @@ table.dt{width:100%;border-collapse:separate;border-spacing:0;background:#fff;bo
 .b.sm{display:inline-flex;align-items:center;justify-content:center;min-height:36px;line-height:1.1;box-sizing:border-box}
 label.b{margin:0;font-weight:600}
 .b.wa{background:#25d366;border-color:#25d366;color:#fff}
+/* e9: maintenance, how charges work, back to the shopper page */
+.fcard .fnotes{margin-top:8px;border-top:1px solid var(--line);padding-top:6px}
+.fnote{font-size:13px;padding:6px 10px;border-radius:10px;margin-top:6px;background:#f1f5f9}
+.fnote.office{background:#e7edf7}
+.fnote b{font-size:12px}
+.fphoto{margin-top:8px}
+.fphoto img{max-width:100%;max-height:420px;border-radius:12px;border:1px solid var(--line)}
+.fctl{margin-top:10px;border-top:1px dashed var(--line);padding-top:4px}
+.howbox{background:#f5f8ff;border-color:#d6e2f5;font-size:13.5px;line-height:1.5}
+.howrow{margin-top:4px}
+.howrow b{display:inline-block;min-width:110px}
+.shopperlink{text-decoration:none;color:var(--quiet)}
+.backshop{color:#cbd5e1;font-weight:600;text-decoration:none}
+@media (min-width: 1000px){ body.office .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:0 14px;align-items:start} body.office .otabs .shopperlink{margin-top:14px;border-top:1px solid var(--line);border-radius:0;padding-top:16px} }
 /* e2: leases and charges */
 .tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .tile{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 12px}
@@ -285,7 +299,7 @@ input[type=date]{-webkit-appearance:none;appearance:none;min-height:44px}
 <script>
 (function(){
 'use strict';
-var ESM_BUILD = 'ESM e8';
+var ESM_BUILD = 'ESM e9';
 var MODE = 'shop';   // Block 1 = 'shop' (index.html: shoppers + tenants) · Block 2 = 'office' (office.html). Set by build_esm.py.
 var SB_URL = 'https://pqduivcxwykcixqsfrwi.supabase.co';
 var SB_KEY = 'sb_publishable_Cl8uDRrLqx9VMaC3lifpWA_Wl91vVy2';   // OTR-Tennis public (publishable) key
@@ -553,7 +567,7 @@ function pageMyShop(note){
         '<div style="flex:1"><div class="hint" style="margin:0 0 8px">Shoppers see it on the door, your specials and your shop page.</div>' +
         '<label class="b sm main">' + (r.unit.logo ? 'Change logo' : 'Add your logo') + '<input type="file" accept="image/*" id="myLogo" style="display:none"></label>' +
         '<div class="msg" id="logoMsg"></div></div></div>' +
-      '<div id="acct"></div>' +
+      '<div id="acct"></div><div id="mfaults"></div>' +
       '<div class="h3">Your specials</div><div id="mine"></div>' +
       '<div class="b wide" id="out">Log out</div></div>';
     $('mine').innerHTML = r.specials.length ? r.specials.map(function(x){
@@ -565,6 +579,7 @@ function pageMyShop(note){
         '<div class="btns"><div class="b sm no" data-rm="' + x.id + '">Remove</div></div><div class="slot"></div></div>';
     }).join('') : '<div class="empty">You have not posted any specials yet.</div>';
     shopAccount($('acct'), s);
+    shopFaults($('mfaults'), s);
     $('myLogo').onchange = function(){
       var lm = $('logoMsg'); lm.className = 'msg'; lm.textContent = 'Preparing the logo…';
       fileToLogo($('myLogo').files[0]).then(function(data){
@@ -622,7 +637,9 @@ function pageOwner(note){
         '<div class="tab' + (OWNER_TAB === 'charges' ? ' on' : '') + '" data-tab="charges">Charges</div>' +
         '<div class="tab' + (OWNER_TAB === 'billing' ? ' on' : '') + '" data-tab="billing">Billing</div>' +
         '<div class="tab' + (OWNER_TAB === 'statements' ? ' on' : '') + '" data-tab="statements">Statements</div>' +
+        '<div class="tab' + (OWNER_TAB === 'maint' ? ' on' : '') + '" data-tab="maint">🔧 Maintenance</div>' +
         '<div class="tab' + (OWNER_TAB === 'centre' ? ' on' : '') + '" data-tab="centre">Centre</div>' +
+        '<a class="tab shopperlink" href="index.html' + (CID ? '?c=' + CID : '') + '">↗ Shopper page</a>' +
       '</div><div class="pad" id="ow"></div></div>';
     APP.querySelector('.tabs').onclick = function(e){ var t = e.target.closest('[data-tab]'); if (!t) return;
       go('#tab/' + t.getAttribute('data-tab')); };
@@ -636,6 +653,7 @@ function pageOwner(note){
     else if (OWNER_TAB === 'charges') ownerCharges(box, s, top);
     else if (OWNER_TAB === 'billing') ownerBilling(box, s, top);
     else if (OWNER_TAB === 'statements') ownerStatements(box, s, top);
+    else if (OWNER_TAB === 'maint') ownerMaint(box, r, s, top);
     else ownerCentre(box, r, s, top);
   });
 }
@@ -844,7 +862,7 @@ function spaceRow(D, sp){
       return '<option value="' + t.id + '"' + (t.id === sp.type_id ? ' selected' : '') + '>' + esc(t.name) + (t.rentable ? ' (R)' : '') + '</option>'; }).join('') + '</select>' +
     '<span class="b sm no" data-spdel>✕</span></div>' +
     '<div class="two"><div><label>m²</label><input data-sp="area" inputmode="decimal" value="' + esc(numStr(sp.area_m2)) + '"></div>' +
-    '<div><label>Rate per m²</label><input data-sp="rate" inputmode="decimal" placeholder="usual ' +
+    '<div><label>This shop\'s rate per m²</label><input data-sp="rate" inputmode="decimal" placeholder="usual ' +
       esc(String((D.space_types.filter(function(t){ return t.id === sp.type_id; })[0] || D.space_types[0] || { rate: 0 }).rate)) + '" value="' + esc(numStr(sp.rate)) + '"></div></div></div>';
 }
 function spacesText(u){
@@ -959,7 +977,7 @@ function unitCard(D, u, l, T, mode){
     '<div class="sub" style="margin-top:0">The space</div>' +
     (vac ? '<label>Unit name</label><input data-s="name" maxlength="60" value="' + esc(u.name) + '">' : '') +
     '<label>Where</label><input data-s="location" maxlength="40" value="' + esc(u.location) + '">' +
-    '<div class="sub">Spaces</div><div class="hint">Each kind of space with its m² and rent per m². Rentable m² (SAPOA) counts the spaces marked R.</div>' +
+    '<div class="sub">Spaces and this shop\'s rent</div><div class="hint">Every shop can pay its own rent per m²: anchor tenants usually pay less than line shops. Type <b>this shop\'s rate</b> next to each space; leave it empty to use the usual rate for that kind of space (set on Charges → Kinds of space). Rentable m² (SAPOA) counts the spaces marked R.</div>' +
     '<div data-spaces>' + (u.spaces.length ? u.spaces : (u.area_m2 ? [{ type_id: (D.space_types[0] || {}).id, area_m2: u.area_m2, rate: null }] : [])).map(function(sp){ return spaceRow(D, sp); }).join('') + '</div>' +
     '<div class="btns"><div class="b sm" data-addsp>Add a space</div></div><div class="hint" data-rm2></div>' +
     '<div class="sub">' + (vac ? 'New lease' : 'The lease') + '</div>' +
@@ -1154,7 +1172,14 @@ function ownerCharges(box, s, top){
       return 'not charged';
     }
     box.innerHTML = top +
-      '<div class="box"><div style="font-weight:700">Settings</div>' +
+      '<div class="box howbox"><div style="font-weight:800;margin-bottom:6px">How charges work</div>' +
+        '<div>You set each charge <b>once for the whole centre</b> below. The app then works out <b>every shop\'s part</b> by itself:</div>' +
+        '<div class="howrow"><b>Fixed amount</b> the same amount for each shop</div>' +
+        '<div class="howrow"><b>Rate per m²</b> the shop\'s rentable m² × the rate</div>' +
+        '<div class="howrow"><b>Share by area</b> the month\'s centre bill split by each shop\'s share of the m²</div>' +
+        '<div class="howrow"><b>Metered</b> the shop\'s own meter readings × the tariff</div>' +
+        '<div style="margin-top:6px">A single shop can be different (switched off, its own amount or way): open that shop → <b>Charges</b>. Tap <b>What each shop pays</b> under a charge to see every shop\'s part. <b>Rent</b> is not a charge: it is set per shop on its lease.</div></div>' +
+      '<div class="box" style="margin-top:12px"><div style="font-weight:700">Settings</div>' +
         '<div class="two"><div><label>Currency</label><select id="stCur"><option value="E"' + (cur === 'E' ? ' selected' : '') + '>E (Lilangeni)</option>' +
           '<option value="R"' + (cur === 'R' ? ' selected' : '') + '>R (Rand)</option></select></div>' +
         '<div><label>Centre\'s VAT no.</label><input id="stVat" maxlength="30" value="' + esc(c.vat_no || '') + '"></div></div>' +
@@ -1163,7 +1188,7 @@ function ownerCharges(box, s, top){
           '<option value="let"' + (c.share_basis === 'let' ? ' selected' : '') + '>Let m² only (the tenants carry the empty units)</option></select>' +
         '<div class="hint">Whole centre: ' + m2s(T.all) + ' · let: ' + m2s(T.let_) + '. VAT is 15%.</div>' +
         '<div class="b main wide" id="stSave">Save settings</div><div class="msg" id="stMsg"></div></div>' +
-      '<div class="h3">Kinds of space</div><div class="hint">Each kind of space has its usual rent per m². <b>R</b> = counts as rentable area (SAPOA: the shop itself and common area only that shop uses, e.g. its own loading area). Rentable m² is what every share and per-m² charge uses. Yards and storage are usually let at their own rate and do not count.</div>' +
+      '<div class="h3">Kinds of space and their usual rents</div><div class="hint">Each kind of space has its usual rent per m². <b>R</b> = counts as rentable area (SAPOA: the shop itself and common area only that shop uses, e.g. its own loading area). Rentable m² is what every share and per-m² charge uses. Yards and storage are usually let at their own rate and do not count.</div>' +
       D.space_types.map(function(t){
         var n = D.unit_spaces.filter(function(x){ return x.type_id === t.id; }).length;
         return '<div class="item" data-sty="' + t.id + '"><div style="display:flex;justify-content:space-between;gap:8px"><div class="ti">' + esc(t.name) + '</div>' +
@@ -1177,10 +1202,15 @@ function ownerCharges(box, s, top){
         return '<div class="item" data-ct="' + ct.id + '"><div class="top" style="display:flex;justify-content:space-between;gap:8px">' +
           '<div class="ti">' + esc(ct.name) + '</div><span class="st ' + (ct.method === 'off' ? 'ended' : 'approved') + '">' + esc(METHODS[ct.method]) + '</span></div>' +
           '<div class="mt">' + rateText(ct) + (ct.vat ? ' · plus VAT' : ' · no VAT') + '</div>' +
-          '<div class="btns"><div class="b sm" data-ed="' + ct.id + '">Change</div><div class="b sm no" data-del="' + ct.id + '">Remove</div></div><div class="slot"></div></div>';
+          '<div class="btns"><div class="b sm" data-who="' + ct.id + '">What each shop pays</div><div class="b sm" data-ed="' + ct.id + '">Change</div><div class="b sm no" data-del="' + ct.id + '">Remove</div></div><div class="slot"></div><div class="whoslot"></div></div>';
       }).join('') +
       '<div class="b main wide" id="ctAdd">Add a charge</div><div id="ctAddSlot"></div>' +
       '<div class="b wide" id="out">Log out</div>';
+    box.querySelectorAll('[data-who]').forEach(function(b){ b.onclick = function(){
+      var sl = b.closest('.item').querySelector('.whoslot'), ct = D.charges.filter(function(x){ return x.id === Number(b.getAttribute('data-who')); })[0];
+      if (sl.innerHTML) { sl.innerHTML = ''; b.textContent = 'What each shop pays'; return; }
+      sl.innerHTML = '<div class="box" style="margin-top:8px">' + chargeWho(D, ct, T) + '</div>'; b.textContent = 'Hide';
+    }; });
     // kinds of space: add / change / remove
     function styForm(t){
       t = t || { name: '', rate: 0, rentable: true, sort: 10 + D.space_types.length * 10 };
@@ -1903,6 +1933,7 @@ function officeLogin(){
       '<input id="code" inputmode="numeric" maxlength="6" autocomplete="off" placeholder="6 digits">' +
       '<div class="b wide offbtn" id="open">Open the office</div><div class="msg" id="m"></div>' +
     '</div>' +
+    '<div style="text-align:center;margin-top:16px"><a class="backshop" href="index.html' + (CID ? '?c=' + CID : '') + '">‹ Back to the shopper page</a></div>' +
     '<div class="offhint"><b>Keep the office on your phone like an app</b><br>' +
       'iPhone (Safari): tap Share <span class="kbd">⬆</span> then <b>Add to Home Screen</b>.<br>' +
       'Android (Chrome): tap <span class="kbd">⋮</span> then <b>Add to Home screen</b> or <b>Install app</b>.</div>' +
@@ -1944,10 +1975,12 @@ function ownerHome(box, r, s, top){
   mgmtLoad(s).then(function(D){
     if (!D.ok) { box.innerHTML = '<div class="msg err">' + esc(D.msg) + '</div>'; return; }
     thisMonth = monthStart(D.today);
-    return Promise.all([D, rpc('ctr_statements_home', { p_centre: CID, p_code: s.code }), rpc('ctr_billing_home', { p_centre: CID, p_code: s.code, p_period: thisMonth })]);
+    return Promise.all([D, rpc('ctr_statements_home', { p_centre: CID, p_code: s.code }), rpc('ctr_billing_home', { p_centre: CID, p_code: s.code, p_period: thisMonth }),
+                        rpc('ctr_faults_home', { p_centre: CID, p_code: s.code })]);
   }).then(function(all){
     if (!all) return;
-    var D = all[0], S = all[1], B = all[2], cur = D.centre.currency, today = D.today, T = mgmtTotals(D);
+    var D = all[0], S = all[1], B = all[2], F = all[3], cur = D.centre.currency, today = D.today, T = mgmtTotals(D);
+    var fOpen = F && F.ok ? F.faults.filter(function(f){ return f.status !== 'fixed'; }) : [], fUrg = fOpen.filter(function(f){ return f.urgency === 'urgent'; }).length;
     var logoOf = {}; r.units.forEach(function(u){ logoOf[u.id] = u; });
     var balOf = {}, owed = 0, late = 0;
     (S.ok ? S.leases : []).forEach(function(l){
@@ -1966,6 +1999,7 @@ function ownerHome(box, r, s, top){
         '<div class="htile" data-go="#tab/leases"><div class="k">Rent roll</div><div class="v">' + money(cur, r2(roll)) + '</div><div class="s">a month · ' + occ + '% let</div></div>' +
         '<div class="htile' + (r.pending.length ? ' hot' : '') + '" data-go="#tab/approve"><div class="k">Specials to approve</div><div class="v">' + r.pending.length + '</div><div class="s">' + r.running.length + ' on the door</div></div>' +
         '<div class="htile' + (past ? ' hot' : '') + '" data-go="#tab/leases"><div class="k">Leases</div><div class="v">' + ending + ' ending</div><div class="s">' + past + ' past their end</div></div>' +
+        '<div class="htile' + (fUrg ? ' hot' : '') + '" data-go="#tab/maint"><div class="k">Maintenance</div><div class="v">' + fOpen.length + ' open</div><div class="s">' + (fUrg ? '⚠ ' + fUrg + ' urgent' : 'nothing urgent') + '</div></div>' +
         '<div class="htile wide2" data-go="#tab/billing"><div class="k">Billing · ' + monthName(thisMonth) + '</div><div class="v">' + bill + '</div><div class="s">Tap to make, check and send the month\'s invoices</div></div>' +
       '</div>' +
       '<div class="h3">Shops</div><div class="hint" style="margin-top:0">Tap a shop to open its own page.</div>' +
@@ -1987,7 +2021,7 @@ function ownerHome(box, r, s, top){
 }
 
 // ---------- a page per shop ----------
-var UF_SECS = [['overview','Overview'],['lease','Lease & spaces'],['charges','Charges'],['invoices','Invoices'],['statement','Statement'],['shop','Shop']];
+var UF_SECS = [['overview','Overview'],['lease','Lease & spaces'],['charges','Charges'],['invoices','Invoices'],['statement','Statement'],['maint','Maintenance'],['shop','Shop']];
 function pageUnit(id, sec, note){
   var s = sess();
   if (!s || s.role !== 'owner') { go('#login/owner'); return; }
@@ -2002,7 +2036,7 @@ function pageUnit(id, sec, note){
     var sl = l ? S.leases.filter(function(x){ return x.id === l.id; })[0] : null;
     var invs = l ? S.invoices.filter(function(i){ return i.lease_id === l.id; }) : [], pays = l ? S.payments.filter(function(p){ return p.lease_id === l.id; }) : [];
     var L = l ? ledger(invs, pays, today) : null, c = l ? leaseCalc(l, u, today) : null;
-    var secs = UF_SECS.filter(function(x){ return !(vac && (x[0] === 'shop' || x[0] === 'invoices' || x[0] === 'statement' || x[0] === 'overview')); });
+    var secs = UF_SECS.filter(function(x){ return !(vac && (x[0] === 'shop' || x[0] === 'invoices' || x[0] === 'statement' || x[0] === 'overview' || x[0] === 'maint')); });
     if (!secs.some(function(x){ return x[0] === sec; })) sec = secs[0][0];
     APP.innerHTML = mini(u.name, '#tab/' + LAST_TAB) +
       '<div class="ufhero">' + logoBox(ou || u, 64) + '<div style="min-width:0"><div class="ufn">' + esc(u.name) + '</div>' +
@@ -2076,6 +2110,15 @@ function pageUnit(id, sec, note){
       add('<div data-wrap>' + stCard(sl, L, cur, today) + '</div>');
       wireStCard(box.querySelector('[data-scard]'), S, { l: sl, L: L }, s, done);
     }
+    else if (sec === 'maint') {
+      add('<div class="b wide" data-fnew style="margin-top:0">🔧 Log a problem for ' + esc(u.name) + '</div><div data-fslot></div><div data-flist><div class="loading">Loading…</div></div>');
+      box.querySelector('[data-fnew]').onclick = function(){ var sl = box.querySelector('[data-fslot]'); sl.innerHTML = faultForm(''); wireFaultForm(sl, s, id, done); };
+      rpc('ctr_faults_home', { p_centre: CID, p_code: s.code }).then(function(R){
+        var mine = R.ok ? R.faults.filter(function(f){ return f.unit_id === id; }) : [], fl = box.querySelector('[data-flist]');
+        fl.innerHTML = mine.length ? mine.map(function(f){ return faultCard(f, 'office', false); }).join('') : '<div class="box empty" style="margin-top:10px">No problems reported for this shop.</div>';
+        wireFaultCards(fl, s, mine, done);
+      });
+    }
     else if (sec === 'shop') {
       var mine = r.pending.concat(r.running).filter(function(x){ return x.unit_id === id; });
       add('<div class="box" style="display:flex;gap:14px;align-items:center">' + logoBox(ou, 72) + '<div style="flex:1"><div style="font-weight:700">Logo</div>' +
@@ -2134,6 +2177,158 @@ function pageUnit(id, sec, note){
       });
     }
   });
+}
+
+// =====================================================================
+// e9 · MAINTENANCE: a shop reports a problem; the office moves it along
+// =====================================================================
+var F_STATUS = { reported: 'Reported', assigned: 'Assigned', in_progress: 'Being fixed', fixed: 'Fixed' };
+var F_URG = { urgent: 'Urgent', normal: 'Soon', low: 'Can wait' };
+var MAINT_FILTER = 'open';
+function fStatusPill(st){ return '<span class="st ' + (st === 'fixed' ? 'approved' : st === 'reported' ? 'rejected' : 'pending') + '">' + F_STATUS[st] + '</span>'; }
+function fUrgPill(u){ return u === 'urgent' ? '<span class="st rejected">⚠ Urgent</span>' : u === 'low' ? '<span class="st ended">Can wait</span>' : ''; }
+function ago(ts){ var d = Math.floor((Date.now() - Date.parse(ts)) / 864e5); return d <= 0 ? 'today' : d === 1 ? 'yesterday' : d + ' days ago'; }
+// a photo from the phone → at most 1024 px wide/high JPEG (about 100–250 KB)
+function fileToPhoto(file){
+  return new Promise(function(ok, no){
+    if (!file) return ok(null);
+    if (!/^image\//.test(file.type)) return no('Choose a photo (JPG or PNG).');
+    var fr = new FileReader();
+    fr.onerror = function(){ no('That photo could not be read.'); };
+    fr.onload = function(){
+      var im = new Image();
+      im.onerror = function(){ no('That photo could not be read.'); };
+      im.onload = function(){
+        var k = Math.min(1, 1024 / Math.max(im.width, im.height)), cv = document.createElement('canvas');
+        cv.width = Math.round(im.width * k); cv.height = Math.round(im.height * k);
+        var g = cv.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, cv.width, cv.height); g.drawImage(im, 0, 0, cv.width, cv.height);
+        var q = 0.72, d = cv.toDataURL('image/jpeg', q);
+        while (d.length > 580000 && q > 0.35) { q -= 0.1; d = cv.toDataURL('image/jpeg', q); }
+        ok(d);
+      };
+      im.src = fr.result;
+    };
+    fr.readAsDataURL(file);
+  });
+}
+function faultForm(shopSelect){
+  return '<div class="box fform">' + (shopSelect || '') +
+    '<label>What is wrong?</label><input data-ff="title" maxlength="80" placeholder="e.g. Water leaking from the ceiling">' +
+    '<label>Where?</label><input data-ff="place" maxlength="80" placeholder="e.g. Kitchen, above the sink">' +
+    '<label>More detail (optional)</label><textarea data-ff="detail" maxlength="1000"></textarea>' +
+    '<label>How urgent?</label><select data-ff="urgency"><option value="normal">Soon</option><option value="urgent">Urgent (leak, no power, unsafe)</option><option value="low">Can wait</option></select>' +
+    '<label>Photo (optional)</label><label class="b sm" style="width:max-content">📷 Add a photo<input type="file" accept="image/*" data-ff="photo" style="display:none"></label><span class="hint" data-ffpn></span>' +
+    '<div class="b main wide" data-ffsend>Send to the centre office</div><div class="msg" data-ffm></div></div>';
+}
+function wireFaultForm(box, s, unitId, done){
+  var f = box.querySelector('.fform'), g = function(k){ return f.querySelector('[data-ff=' + k + ']'); }, m = f.querySelector('[data-ffm]');
+  g('photo').onchange = function(){ f.querySelector('[data-ffpn]').textContent = g('photo').files[0] ? ' ' + g('photo').files[0].name : ''; };
+  f.querySelector('[data-ffsend]').onclick = function(){
+    var uid = unitId != null ? unitId : (f.querySelector('[data-ff=unit]') ? Number(f.querySelector('[data-ff=unit]').value) : null);
+    m.className = 'msg'; m.textContent = 'Sending…';
+    fileToPhoto(g('photo').files[0]).then(function(ph){
+      return rpc('ctr_fault_report', { p_centre: CID, p_code: s.code, p_unit: uid, p_title: g('title').value, p_place: g('place').value,
+                                        p_detail: g('detail').value, p_urgency: g('urgency').value, p_photo: ph });
+    }).then(function(x){
+      if (!x.ok) { m.className = 'msg err'; m.textContent = x.msg; return; }
+      done('Sent. The centre office can see it now.');
+    }, function(err){ m.className = 'msg err'; m.textContent = String(err); });
+  };
+}
+// one problem: what, where, when, photo, the notes, and (office) the controls to move it along
+function faultCard(f, role, showUnit){
+  var notes = f.notes.map(function(n){ return '<div class="fnote ' + n.author + '"><b>' + (n.author === 'office' ? 'Centre office' : 'Shop') + '</b> · ' + ago(n.at) + '<div>' + esc(n.body) + '</div></div>'; }).join('');
+  return '<div class="item fcard" data-fid="' + f.id + '">' +
+    '<div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start"><div class="ti">' + esc(f.title) + '</div><div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end">' + fUrgPill(f.urgency) + fStatusPill(f.status) + '</div></div>' +
+    '<div class="mt">' + (showUnit ? '<b>' + esc(f.unit) + '</b> · ' : '') + (f.place ? esc(f.place) + ' · ' : '') + 'reported ' + ago(f.created_at) + (f.reported_by === 'office' ? ' by the office' : '') +
+      (f.assigned_to ? ' · fixing: ' + esc(f.assigned_to) : '') + '</div>' +
+    (f.detail ? '<div class="de">' + esc(f.detail) + '</div>' : '') +
+    (f.has_photo ? '<div class="fphoto"><div class="b sm" data-fph>📷 Show photo</div></div>' : '') +
+    (notes ? '<div class="fnotes">' + notes + '</div>' : '') +
+    (role === 'office'
+      ? '<div class="fctl"><div class="two"><div><label>Status</label><select data-fc="status">' + Object.keys(F_STATUS).map(function(k){ return '<option value="' + k + '"' + (f.status === k ? ' selected' : '') + '>' + F_STATUS[k] + '</option>'; }).join('') + '</select></div>' +
+        '<div><label>How urgent</label><select data-fc="urgency">' + Object.keys(F_URG).map(function(k){ return '<option value="' + k + '"' + (f.urgency === k ? ' selected' : '') + '>' + F_URG[k] + '</option>'; }).join('') + '</select></div></div>' +
+        '<label>Who is fixing it</label><input data-fc="assigned" maxlength="80" value="' + esc(f.assigned_to || '') + '" placeholder="e.g. Sipho (plumber)">' +
+        '<label>Note to the shop (optional)</label><input data-fc="note" maxlength="500" placeholder="e.g. Plumber coming at 14:00">' +
+        '<div class="btns"><div class="b sm main" data-fsave>Save</div></div></div>'
+      : (f.status !== 'fixed' ? '<div class="two" style="grid-template-columns:1fr auto;align-items:end"><div><label>Add a note</label><input data-fc="note" maxlength="500"></div><div class="b sm" data-fnote style="margin-bottom:2px">Add</div></div>' : '')) +
+    '<div class="msg" data-fm></div></div>';
+}
+function wireFaultCards(box, s, faults, done){
+  box.querySelectorAll('.fcard').forEach(function(card){
+    var id = Number(card.getAttribute('data-fid')), m = card.querySelector('[data-fm]');
+    var ph = card.querySelector('[data-fph]');
+    if (ph) ph.onclick = function(){
+      ph.textContent = 'Loading…';
+      rpc('ctr_fault_photo', { p_centre: CID, p_code: s.code, p_id: id }).then(function(x){
+        if (!x.ok || !x.photo) { ph.textContent = 'No photo'; return; }
+        ph.parentNode.innerHTML = '<img src="' + esc(x.photo) + '" alt="photo of the problem">';
+      });
+    };
+    var sv = card.querySelector('[data-fsave]');
+    if (sv) sv.onclick = function(){
+      var g = function(k){ return card.querySelector('[data-fc=' + k + ']').value; };
+      m.className = 'msg'; m.textContent = 'Saving…';
+      rpc('ctr_fault_update', { p_centre: CID, p_code: s.code, p_id: id, p_status: g('status'), p_assigned_to: g('assigned'), p_urgency: g('urgency'), p_note: g('note') }).then(function(x){
+        if (!x.ok) { m.className = 'msg err'; m.textContent = x.msg; return; }
+        done('Saved. The shop sees the progress on My shop.');
+      });
+    };
+    var nt = card.querySelector('[data-fnote]');
+    if (nt) nt.onclick = function(){
+      rpc('ctr_fault_note', { p_centre: CID, p_code: s.code, p_id: id, p_note: card.querySelector('[data-fc=note]').value }).then(function(x){
+        if (!x.ok) { m.className = 'msg err'; m.textContent = x.msg; return; }
+        done('Note added.');
+      });
+    };
+  });
+}
+// Block 1: My shop → "Problems in your shop"
+function shopFaults(el, s, note){
+  rpc('ctr_shop_faults', { p_centre: CID, p_code: s.code }).then(function(R){
+    if (!R || !R.ok) { el.innerHTML = ''; return; }
+    var open = R.faults.filter(function(f){ return f.status !== 'fixed'; }).length;
+    el.innerHTML = '<div class="h3">Maintenance</div>' + (note ? '<div class="msg ok" style="margin-bottom:8px">' + esc(note) + '</div>' : '') +
+      '<div class="b wide" data-fnew style="margin-top:0">🔧 Report a problem</div><div data-fslot></div>' +
+      (R.faults.length ? '<div class="hint" style="margin-top:10px">' + open + ' open · the centre office updates these as they are fixed.</div>' + R.faults.map(function(f){ return faultCard(f, 'shop', false); }).join('')
+                       : '<div class="hint" style="margin-top:8px">Nothing reported. Use the button above when something needs fixing.</div>');
+    var done = function(msg){ shopFaults(el, s, msg); };
+    el.querySelector('[data-fnew]').onclick = function(){ var sl = el.querySelector('[data-fslot]'); sl.innerHTML = faultForm(''); wireFaultForm(sl, s, null, done); };
+    wireFaultCards(el, s, R.faults, done);
+  });
+}
+// Block 2: the Maintenance page
+function ownerMaint(box, r, s, top){
+  box.innerHTML = '<div class="loading">Loading…</div>';
+  rpc('ctr_faults_home', { p_centre: CID, p_code: s.code }).then(function(R){
+    if (!R.ok) { box.innerHTML = '<div class="msg err">' + esc(R.msg) + '</div>'; return; }
+    var open = R.faults.filter(function(f){ return f.status !== 'fixed'; }), urgent = open.filter(function(f){ return f.urgency === 'urgent'; });
+    var list = R.faults.filter(function(f){ return MAINT_FILTER === 'all' || (MAINT_FILTER === 'open' ? f.status !== 'fixed' : f.status === 'fixed'); });
+    box.innerHTML = top +
+      '<div class="tiles"><div class="tile"><div class="k">Open problems</div><div class="v">' + open.length + '</div><div class="s">' + urgent.length + ' urgent</div></div>' +
+      '<div class="tile"><div class="k">Not yet assigned</div><div class="v">' + open.filter(function(f){ return f.status === 'reported'; }).length + '</div><div class="s">waiting for you</div></div></div>' +
+      '<div class="cats" style="margin-top:14px">' + [['open', 'Open (' + open.length + ')'], ['fixed', 'Fixed'], ['all', 'All']].map(function(x){
+        return '<div class="tab' + (MAINT_FILTER === x[0] ? ' on' : '') + '" data-mf="' + x[0] + '">' + x[1] + '</div>'; }).join('') + '</div>' +
+      '<div class="b wide" data-fnew>🔧 Log a problem for a shop</div><div data-fslot></div>' +
+      (list.length ? '<div class="fgrid">' + list.map(function(f){ return faultCard(f, 'office', true); }).join('') + '</div>' : '<div class="box empty" style="margin-top:10px">Nothing here.</div>') +
+      '<div class="b wide" id="out">Log out</div>';
+    var done = function(msg){ ownerMaint(box, r, s, '<div class="msg ok">' + esc(msg) + '</div>'); };
+    box.querySelectorAll('[data-mf]').forEach(function(t){ t.onclick = function(){ MAINT_FILTER = t.getAttribute('data-mf'); ownerMaint(box, r, s, ''); }; });
+    box.querySelector('[data-fnew]').onclick = function(){
+      var sl = box.querySelector('[data-fslot]');
+      sl.innerHTML = faultForm('<label style="margin-top:0">Which shop?</label><select data-ff="unit">' + r.units.map(function(u){ return '<option value="' + u.id + '">' + esc(u.name) + '</option>'; }).join('') + '</select>');
+      wireFaultForm(sl, s, null, done);
+    };
+    wireFaultCards(box, s, R.faults, done);
+    $('out').onclick = function(){ setSess(null); go('#'); };
+  });
+}
+
+// e9 · "what each shop pays" for one charge, worked out for every shop
+function chargeWho(D, ct, T){
+  return D.units.filter(function(u){ return !u.vacant && T.leaseOf[u.id]; }).map(function(u){
+    return '<div class="crow"><div class="hd"><span class="nm" style="font-weight:600">' + esc(u.name) + '</span></div><div class="est">' + chargeEst(D, u, ct, chargeRow(D, u, ct), T) + '</div></div>';
+  }).join('');
 }
 
 // ---------- router ----------
