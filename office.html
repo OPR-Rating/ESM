@@ -182,7 +182,8 @@ textarea{min-height:70px;resize:vertical}
 .offtitle{font-size:30px;font-weight:800;letter-spacing:-.5px;margin-top:2px}
 .offsub{font-size:13px;color:#cbd5e1;margin:4px 0 18px}
 .offcard label{text-align:left}
-.offcard input{text-align:center;font-size:22px;letter-spacing:.3em;font-weight:700}
+.offcard input{text-align:center;font-size:22px;letter-spacing:.3em;font-weight:700;color:var(--ink);background:#fff}
+.offcard input::placeholder{color:#98a2b3;letter-spacing:.1em;font-weight:600}
 .offbtn{background:#ffd43b;border-color:#ffd43b;color:#3a2c00;font-size:16px;padding:14px}
 .offhint{margin-top:18px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:14px;color:#e2e8f0;font-size:13px;line-height:1.6}
 .kbd{display:inline-block;background:rgba(255,255,255,.15);border-radius:6px;padding:0 6px;font-weight:700}
@@ -202,6 +203,39 @@ textarea{min-height:70px;resize:vertical}
 .ufbal{font-weight:800}
 .uftabs{background:#fff;padding:10px 16px 12px;border-bottom:1px solid var(--line);position:sticky;top:52px;z-index:4}
 .ivlines{margin-top:8px;border-top:1px solid var(--line)}
+/* e7: Centre Office button on the shopper page; the office on a laptop */
+.officebtn{position:absolute;top:14px;right:14px;z-index:3;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.35);color:#fff;
+  text-decoration:none;font-weight:700;font-size:13px;padding:7px 12px;border-radius:999px}
+.wide-only{display:none}
+table.dt{width:100%;border-collapse:separate;border-spacing:0;background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;font-size:14px;margin-top:8px}
+.dt th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--quiet);padding:10px 12px;background:#f8fafc;border-bottom:1px solid var(--line);font-weight:700}
+.dt td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+.dt tbody tr:last-child td{border-bottom:0}
+.dt tr[data-go]{cursor:pointer}
+.dt tbody tr[data-go]:hover{background:#f3f7ff}
+.dt .r{text-align:right;white-space:nowrap}
+.dt .nmc{display:flex;gap:10px;align-items:center;font-weight:700}
+@media (min-width: 1000px){
+  body.office .app{max-width:1320px;padding-bottom:30px}
+  body.office .wide-only{display:block}
+  body.office .narrow-only{display:none}
+  body.office .owl{display:grid;grid-template-columns:230px minmax(0,1fr);align-items:start}
+  body.office .otabs{flex-direction:column;flex-wrap:nowrap;position:sticky;top:56px;padding:18px 12px;gap:4px;border-right:1px solid var(--line);min-height:calc(100vh - 56px)}
+  body.office .otabs .tab{border:0;background:transparent;border-radius:10px;padding:11px 14px;font-size:14.5px;text-align:left}
+  body.office .otabs .tab:hover{background:#e7edf7}
+  body.office .otabs .tab.on{background:var(--brand);color:#fff}
+  body.office #ow{padding:22px 28px}
+  body.office .hometiles{grid-template-columns:repeat(4,1fr)}
+  body.office .tiles{grid-template-columns:repeat(4,1fr)}
+  body.office .ufhero{padding:22px 28px}
+  body.office .uftabs{padding:10px 28px 12px;top:56px}
+  body.office #uf{padding:22px 28px}
+  body.office .ovgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;align-items:start}
+  body.office [data-card]{max-width:880px}
+  body.office [data-iv],body.office [data-scard]{max-width:880px}
+  body.office .offcard,body.office .offhint{max-width:440px;margin-left:auto;margin-right:auto}
+  body.office .offwrap{padding-top:80px}
+}
 /* e2: leases and charges */
 .tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .tile{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 12px}
@@ -253,7 +287,7 @@ input[type=date]{-webkit-appearance:none;appearance:none;min-height:44px}
 <script>
 (function(){
 'use strict';
-var ESM_BUILD = 'ESM e6';
+var ESM_BUILD = 'ESM e7';
 var MODE = 'office';   // Block 1 = 'shop' (index.html: shoppers + tenants) · Block 2 = 'office' (office.html). Set by build_esm.py.
 var SB_URL = 'https://pqduivcxwykcixqsfrwi.supabase.co';
 var SB_KEY = 'sb_publishable_Cl8uDRrLqx9VMaC3lifpWA_Wl91vVy2';   // OTR-Tennis public (publishable) key
@@ -384,7 +418,7 @@ function pageDoor(){
   var used = CATS.filter(function(k){ return units.some(function(u){ return u.category === k; }); });
   var hasFuel = units.some(function(u){ return u.category === 'Fuel & car'; });
   APP.innerHTML =
-    '<header class="hero">' +
+    '<header class="hero"><a class="officebtn" href="office.html' + (CID ? '?c=' + CID : '') + '">🏢 Centre Office</a>' +
       '<div class="hero-in">' +
         (c.is_test ? '<span class="testpill">TEST</span>' : '') +
         '<div class="eyebrow">Come in · see what\'s on today</div>' +
@@ -582,7 +616,7 @@ function pageOwner(note){
   rpc('ctr_owner_home', { p_centre: CID, p_code: s.code }).then(function(r){
     if (!r.ok) { setSess(null); bar(); APP.innerHTML = mini('Centre office', null) + '<div class="pad"><div class="msg err">' + esc(r.msg) + '</div></div>'; return; }
     APP.innerHTML = mini('Centre office · ' + r.centre.name, null) +
-      '<div class="tabs">' +
+      '<div class="owl"><div class="tabs otabs">' +
         '<div class="tab' + (OWNER_TAB === 'home' ? ' on' : '') + '" data-tab="home">🏠 Home</div>' +
         '<div class="tab' + (OWNER_TAB === 'approve' ? ' on' : '') + '" data-tab="approve">To approve' + (r.pending.length ? '<span class="cnt">' + r.pending.length + '</span>' : '') + '</div>' +
         '<div class="tab' + (OWNER_TAB === 'shops' ? ' on' : '') + '" data-tab="shops">Shops</div>' +
@@ -591,7 +625,7 @@ function pageOwner(note){
         '<div class="tab' + (OWNER_TAB === 'billing' ? ' on' : '') + '" data-tab="billing">Billing</div>' +
         '<div class="tab' + (OWNER_TAB === 'statements' ? ' on' : '') + '" data-tab="statements">Statements</div>' +
         '<div class="tab' + (OWNER_TAB === 'centre' ? ' on' : '') + '" data-tab="centre">Centre</div>' +
-      '</div><div class="pad" id="ow"></div>';
+      '</div><div class="pad" id="ow"></div></div>';
     APP.querySelector('.tabs').onclick = function(e){ var t = e.target.closest('[data-tab]'); if (!t) return;
       go('#tab/' + t.getAttribute('data-tab')); };
     var box = $('ow');
@@ -873,6 +907,12 @@ function ownerLeases(box, s, top){
         (att.length ? att.map(function(a){ return '<div class="att" data-open="' + a.u.id + '"><span class="dot ' + a.dot + '"></span><span>' + a.t + '</span></div>'; }).join('')
                     : '<div class="empty">Nothing needs attention.</div>') + '</div>' +
       '<div class="h3">Rent roll · ' + D.units.length + ' units' + (empty ? ' · ' + empty + ' empty' : '') + '</div>' +
+      wideT(['Unit', 'Tenant', 'Rentable', 'Spaces', 'Lease', 'Rent now', ''], D.units.map(function(u){
+        var l = T.leaseOf[u.id], c = l && !u.vacant ? leaseCalc(l, u, today) : null;
+        return { go: '#unit/' + u.id + '/lease', cells: ['<b>' + esc(u.name) + '</b>', c ? esc(l.tenant_name) : '<span class="hint">Empty</span>', m2s(u.area_m2),
+                 '<span class="hint">' + esc(spacesText(u)) + '</span>', c ? niceY(l.start_on) + ' – ' + (l.end_on ? niceY(l.end_on) : 'open') : '',
+                 c ? money(cur, c.rent) : '', c ? leasePill(c, l) : '<span class="st empty">Empty</span>'], right: [2, 5] };
+      })) + '<div class="narrow-only">' +
       D.units.map(function(u){
         var l = T.leaseOf[u.id], c = l && !u.vacant ? leaseCalc(l, u, today) : null;
         return '<div class="item rr" data-u="' + u.id + '"><div class="top" data-open="' + u.id + '"><div>' +
@@ -882,7 +922,7 @@ function ownerLeases(box, s, top){
           (c ? '<div class="mt">' + niceY(l.start_on) + ' to ' + (l.end_on ? niceY(l.end_on) : 'no end date') + '</div>' : '') +
           '</div><div style="text-align:right">' + (c ? '<div class="amt">' + money(cur, c.rent) + '</div>' + leasePill(c, l) : '<span class="st empty">Empty</span>') +
           '</div></div></div>';
-      }).join('') +
+      }).join('') + '</div>' +
       '<div class="btns" style="margin-top:14px"><div class="b" id="addUnit">Add an empty unit</div><div class="b" id="csv">Export to Excel</div></div>' +
       '<div id="addUnitSlot"></div>' +
       '<div class="b wide" id="out">Log out</div>';
@@ -1646,6 +1686,12 @@ function ownerStatements(box, s, top){
       '<div class="tiles"><div class="tile"><div class="k">Owed to the centre</div><div class="v">' + money(cur, owed) + '</div></div>' +
       '<div class="tile"><div class="k">30 days and older</div><div class="v">' + money(cur, r2(over30)) + '</div><div class="s">' + money(cur, r2(over90)) + ' is 90+ days</div></div></div>' +
       '<div class="h3">Tenants</div>' +
+      wideT(['Unit', 'Tenant', 'Current', '30 days', '60 days', '90+ days', 'Balance', ''], rows.map(function(x){
+        var l = x.l, L = x.L;
+        return { go: l.ended_on ? null : '#unit/' + l.unit_id + '/statement',
+                 cells: ['<b>' + esc(l.unit) + '</b>' + (l.ended_on ? ' <span class="hint">(left)</span>' : ''), esc(l.tenant_name), money(cur, L.age.cur), money(cur, L.age.d30),
+                         money(cur, L.age.d60), money(cur, L.age.d90), '<b>' + money(cur, L.balance) + '</b>', balPill(L)], right: [2, 3, 4, 5, 6] };
+      })) + '<div class="narrow-only">' +
       rows.map(function(x){
         var l = x.l, L = x.L, pill = L.balance > 0.004 ? (L.age.d30 + L.age.d60 + L.age.d90 > 0 ? '<span class="st rejected">Behind</span>' : '<span class="st pending">Owes</span>')
                                  : L.balance < -0.004 ? '<span class="st approved">In credit</span>' : '<span class="st approved">Paid up</span>';
@@ -1654,7 +1700,7 @@ function ownerStatements(box, s, top){
           (L.age.d30 + L.age.d60 + L.age.d90 > 0 ? '<div class="mt">30d ' + money(cur, L.age.d30) + ' · 60d ' + money(cur, L.age.d60) + ' · 90d+ ' + money(cur, L.age.d90) + '</div>' : '') +
           '</div><div style="text-align:right"><div class="amt">' + money(cur, L.balance) + '</div>' + pill + '</div></div>' +
           (ST_OPEN === l.id ? stCard(l, L, cur, today) : '') + '</div>';
-      }).join('') +
+      }).join('') + '</div>' +
       '<div class="b wide" id="out">Log out</div>';
     box.querySelectorAll('[data-sopen]').forEach(function(el){ el.onclick = function(){
       var id = Number(el.getAttribute('data-sopen')), x = rows.filter(function(r){ return r.l.id === id; })[0];
@@ -1772,6 +1818,14 @@ function officeLogin(){
   $('code').focus();   // the cursor starts in the code box, so typing + Enter works straight away
 }
 
+// a wide table (laptop only; the phone keeps its cards). rows: [{go, cells:[html...], right:[column numbers]}]
+function wideT(head, rows){
+  return '<div class="wide-only"><table class="dt"><thead><tr>' + head.map(function(h, i){ return '<th' + (rows[0] && rows[0].right.indexOf(i) >= 0 ? ' class="r"' : '') + '>' + esc(h) + '</th>'; }).join('') +
+    '</tr></thead><tbody>' + rows.map(function(r){
+      return '<tr' + (r.go ? ' data-go="' + esc(r.go) + '"' : '') + '>' + r.cells.map(function(c, i){ return '<td' + (r.right.indexOf(i) >= 0 ? ' class="r"' : '') + '>' + c + '</td>'; }).join('') + '</tr>';
+    }).join('') + '</tbody></table></div>';
+}
+
 function balPill(L){
   if (!L) return '';
   if (L.balance > 0.004) return L.age.d30 + L.age.d60 + L.age.d90 > 0 ? '<span class="st rejected">Behind</span>' : '<span class="st pending">Owes</span>';
@@ -1811,12 +1865,18 @@ function ownerHome(box, r, s, top){
         '<div class="htile wide2" data-go="#tab/billing"><div class="k">Billing · ' + monthName(thisMonth) + '</div><div class="v">' + bill + '</div><div class="s">Tap to make, check and send the month\'s invoices</div></div>' +
       '</div>' +
       '<div class="h3">Shops</div><div class="hint" style="margin-top:0">Tap a shop to open its own page.</div>' +
+      wideT(['Shop', 'Tenant', 'Rentable', 'Rent now', 'Balance', ''], D.units.map(function(u){
+        var l = T.leaseOf[u.id], L = l ? balOf[l.id] : null, c = l && !u.vacant ? leaseCalc(l, u, today) : null;
+        return { go: '#unit/' + u.id + '/' + (u.vacant || !l ? 'lease' : 'overview'),
+                 cells: ['<div class="nmc">' + logoBox(logoOf[u.id] || u, 32) + esc(u.name) + '</div>', u.vacant || !l ? '<span class="hint">Empty</span>' : esc(l.tenant_name),
+                         m2s(u.area_m2), c ? money(cur, c.rent) : '', L ? money(cur, L.balance) : '', L ? balPill(L) : '<span class="st empty">Empty</span>'], right: [2, 3, 4] };
+      })) + '<div class="narrow-only">' +
       D.units.map(function(u){
         var l = T.leaseOf[u.id], L = l ? balOf[l.id] : null, ou = logoOf[u.id] || u;
         return '<div class="shoprow" data-go="#unit/' + u.id + '/' + (u.vacant || !l ? 'lease' : 'overview') + '">' + logoBox(ou, 44) +
           '<div style="min-width:0"><div class="nm">' + esc(u.name) + '</div><div class="mt">' + (u.vacant || !l ? 'Empty · ' + m2s(u.area_m2) : esc(l.tenant_name)) + '</div></div>' +
           '<div style="margin-left:auto;text-align:right">' + (L ? '<div class="amt">' + money(cur, L.balance) + '</div>' + balPill(L) : '<span class="st empty">Empty</span>') + '</div></div>';
-      }).join('') +
+      }).join('') + '</div>' +
       '<div class="b wide" id="out">Log out</div>';
     $('out').onclick = function(){ setSess(null); go('#'); };
   });
@@ -1856,20 +1916,20 @@ function pageUnit(id, sec, note){
           '<div class="tile"><div class="k">Rent now</div><div class="v">' + money(cur, c.rent) + '</div><div class="s">a month, excl. VAT</div></div>' +
           '<div class="tile"><div class="k">Lease ends</div><div class="v" style="font-size:16px">' + (l.end_on ? niceY(l.end_on) : 'No end date') + '</div><div class="s">' + (c.toEnd != null ? (c.toEnd < 0 ? 'ended ' + (-c.toEnd) + ' days ago' : 'in ' + c.toEnd + ' days') : '') + '</div></div>' +
           '<div class="tile"><div class="k">Rentable</div><div class="v">' + m2s(u.area_m2) + '</div><div class="s">' + esc(spacesText(u)) + '</div></div></div>' +
-        '<div class="h3">Tenant</div><div class="box"><div class="info">' +
+        '<div class="ovgrid"><div><div class="h3">Tenant</div><div class="box"><div class="info">' +
           info('Company', esc(l.tenant_name)) + info('Contact', esc(l.contact || '')) +
           info('Phone', l.phone ? '<a href="tel:' + esc(l.phone.replace(/\s/g, '')) + '">' + esc(l.phone) + '</a>' : '') +
           info('Email', l.email ? '<a href="mailto:' + esc(l.email) + '">' + esc(l.email) + '</a>' : '') + info('VAT no.', esc(l.vat_no || '')) + '</div></div>' +
-        '<div class="h3">Lease</div><div class="box"><div class="info">' +
+        '</div><div><div class="h3">Lease</div><div class="box"><div class="info">' +
           info('Runs', niceY(l.start_on) + ' to ' + (l.end_on ? niceY(l.end_on) : 'no end date')) +
           info('Rent', l.rent_basis === 'spaces' ? 'from the spaces' : l.rent_basis === 'm2' ? money(cur, +l.rent_value) + ' per m² at the start' : money(cur, +l.rent_value) + ' a month at the start') +
           info('Increase', (+l.increase_pct) + '% a year' + (c.next ? ' · next ' + niceY(c.next) + ' to ' + money(cur, c.nextRent) : '')) +
           info('Deposit', money(cur, +l.deposit) + (l.deposit_kind ? ' · ' + esc(l.deposit_kind) : '')) + '</div></div>' +
-        '<div class="h3">Money</div><div class="box"><div class="info">' +
+        '</div><div><div class="h3">Money</div><div class="box"><div class="info">' +
           info('Last invoice', invs.length ? esc(invs[invs.length - 1].number) + ' · ' + monthName(invs[invs.length - 1].period) + ' · ' + money(cur, +invs[invs.length - 1].total) : 'none yet') +
           info('Last payment', pays.length ? niceY(pays[pays.length - 1].paid_on) + ' · ' + money(cur, +pays[pays.length - 1].amount) : 'none yet') +
           info('By age', 'current ' + money(cur, L.age.cur) + ' · 30d ' + money(cur, L.age.d30) + ' · 60d ' + money(cur, L.age.d60) + ' · 90d+ ' + money(cur, L.age.d90)) + '</div>' +
-          '<div class="btns"><div class="b sm main" data-go="#unit/' + id + '/statement">Statement & payments</div><div class="b sm" data-go="#unit/' + id + '/invoices">Invoices</div></div></div>');
+          '<div class="btns"><div class="b sm main" data-go="#unit/' + id + '/statement">Statement & payments</div><div class="b sm" data-go="#unit/' + id + '/invoices">Invoices</div></div></div></div></div>');
     }
     else if (sec === 'lease' || sec === 'charges') {
       add('<div data-wrap>' + unitCard(D, u, l, T, sec) + '</div>');
@@ -1985,6 +2045,7 @@ function route(){
   }
   bar();
   if (MODE === 'office') {           // Block 2: the centre office only
+    document.body.classList.add('office');
     document.title = 'ESM Office';
     if (h === 'login/owner') return officeLogin();
     var mu = h.match(/^unit\/(\d+)(?:\/([a-z]+))?$/);
