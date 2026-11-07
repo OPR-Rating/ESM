@@ -306,7 +306,7 @@ input[type=date]{-webkit-appearance:none;appearance:none;min-height:44px}
 <script>
 (function(){
 'use strict';
-var ESM_BUILD = 'ESM e9';
+var ESM_BUILD = 'ESM e10';
 var MODE = 'office';   // Block 1 = 'shop' (index.html: shoppers + tenants) · Block 2 = 'office' (office.html). Set by build_esm.py.
 var SB_URL = 'https://pqduivcxwykcixqsfrwi.supabase.co';
 var SB_KEY = 'sb_publishable_Cl8uDRrLqx9VMaC3lifpWA_Wl91vVy2';   // OTR-Tennis public (publishable) key
@@ -1629,6 +1629,26 @@ function computeRun(D, lh, period, inp){
 }
 
 var BILL_PERIOD = null, BILL_OPEN = null;
+// a draft is out of date when the shop's lease, spaces or charges changed after it was made
+function draftStale(inv, fresh){
+  if (!fresh) return true;
+  var a = r2(fresh.lines.reduce(function(t, l){ return t + +l.amount; }, 0));
+  return Math.abs(a - +inv.subtotal) > 0.004 || fresh.lines.length !== inv.lines.length;
+}
+function staleList(D, lh, B){
+  if (!B || !B.run || !B.run.id || B.run.status === 'sent') return [];
+  var c = computeRun(D, lh, B.period, B.run.inputs || {}), fresh = {}, out = [];
+  c.invoices.forEach(function(x){ fresh[x.unit_id] = x; });
+  B.invoices.forEach(function(i){ if (i.status === 'draft' && draftStale(i, fresh[i.unit_id])) out.push(i.unit_name); });
+  c.invoices.forEach(function(x){ if (!B.invoices.some(function(i){ return i.unit_id === x.unit_id; })) out.push(x.unit + ' (new)'); });
+  return out;
+}
+// make the month's drafts again with the same bills, readings and once-off lines (after a lease or charge changed)
+function remakeDrafts(D, lh, B, s){
+  var inp = B.run.inputs || {}, c = computeRun(D, lh, B.period, inp);
+  return rpc('ctr_run_save', { p_centre: CID, p_code: s.code, p_period: B.period, p_inputs: inp,
+    p_invoices: c.invoices.map(function(i){ return { unit_id: i.unit_id, lease_id: i.lease_id, lines: i.lines }; }) });
+}
 function ownerBilling(box, s, top){
   box.innerHTML = '<div class="loading">Loading…</div>';
   mgmtLoad(s).then(function(D){
@@ -1693,12 +1713,17 @@ function drawBilling(box, s, top, D, B){
         '<div class="btns"><div class="b sm" id="xAdd">Add line</div></div></div>' +
       '<div class="b main wide" id="blMake">' + (run && run.id ? 'Make the drafts again' : 'Make draft invoices') + '</div><div class="msg" id="blMsg"></div><div id="blWarn"></div>';
   }
+  var stale = staleList(D, lh, B);
   if (invs.length) {
-    html += '<div class="h3">' + (sent ? 'Invoices sent' : 'Draft invoices') + ' · ' + invs.length + '</div>' +
+    html += (stale.length ? '<div class="ask" style="margin-top:14px">⚠ Changed after the drafts were made (lease, spaces or charges): <b>' + stale.map(esc).join(', ') + '</b>.' +
+              '<div class="btns"><div class="b sm main" id="blUpd">Update the drafts</div></div><div class="msg" id="blUpdM"></div></div>' : '') +
+      '<div class="h3">' + (sent ? 'Invoices sent' : 'Draft invoices') + ' · ' + invs.length + '</div>' +
+      '<input id="blFind" placeholder="Find a shop: type the first letters" autocomplete="off" style="margin-bottom:6px">' +
       '<div class="tiles"><div class="tile"><div class="k">Excl. VAT</div><div class="v">' + money(cur, totals.s) + '</div></div>' +
       '<div class="tile"><div class="k">Total incl. VAT</div><div class="v">' + money(cur, totals.t) + '</div><div class="s">VAT ' + money(cur, totals.v) + '</div></div></div>' +
       invs.map(function(i){
-        return '<div class="item rr" data-inv="' + i.id + '"><div class="top" data-iopen="' + i.id + '"><div><div class="ti">' + esc(i.unit_name) + '</div>' +
+        return '<div class="item rr" data-inv="' + i.id + '" data-uname="' + esc(i.unit_name) + '"><div class="top" data-iopen="' + i.id + '"><div><div class="ti">' + esc(i.unit_name) +
+          (stale.indexOf(i.unit_name) >= 0 ? ' <span class="st rejected">Out of date</span>' : '') + '</div>' +
           '<div class="mt">' + esc(i.tenant_name) + (i.number ? ' · ' + esc(i.number) : '') + '</div></div><div style="text-align:right"><div class="amt">' + money(cur, +i.total) + '</div>' +
           (i.status === 'void' ? '<span class="st rejected">Cancelled</span>' : i.status === 'sent' ? '<span class="st approved">Sent</span>' : '<span class="st pending">Draft</span>') + '</div></div>' +
           (BILL_OPEN === i.id ? '<div class="box" style="margin-top:10px;cursor:default" data-icard>' + i.lines.map(function(l){
@@ -1732,6 +1757,16 @@ function drawBilling(box, s, top, D, B){
       o.readings.push({ unit_id: Number(k[0]), charge_id: Number(k[1]), prev: pv, curr: cv }); });
     return bad ? { bad: bad } : o;
   }
+  var fnd = $('blFind'); if (fnd) fnd.oninput = function(){
+    box.querySelectorAll('[data-uname]').forEach(function(el){ el.style.display = startsIn(el.getAttribute('data-uname'), fnd.value) ? '' : 'none'; });
+  };
+  var upd = $('blUpd'); if (upd) upd.onclick = function(){
+    $('blUpdM').className = 'msg'; $('blUpdM').textContent = 'Updating…';
+    remakeDrafts(D, lh, B, s).then(function(x){
+      if (!x.ok) { $('blUpdM').className = 'msg err'; $('blUpdM').textContent = x.msg; return; }
+      BILL_OPEN = null; ownerBilling(box, s, '<div class="msg ok">Drafts updated with the latest leases, spaces and charges (same bills and readings).</div>');
+    });
+  };
   var mon = $('blMonth'); if (mon) mon.onchange = function(){ BILL_PERIOD = mon.value; BILL_OPEN = null; ownerBilling(box, s, ''); };
   var xa = $('xAdd'); if (xa) xa.onclick = function(){
     var a = toNum($('xA').value), d = $('xD').value.trim();
@@ -2033,8 +2068,17 @@ function pageUnit(id, sec, note){
   var s = sess();
   if (!s || s.role !== 'owner') { go('#login/owner'); return; }
   APP.innerHTML = mini('Shop', '#tab/' + LAST_TAB) + '<div class="loading">Loading…</div>';
-  Promise.all([rpc('ctr_owner_home', { p_centre: CID, p_code: s.code }), mgmtLoad(s), rpc('ctr_statements_home', { p_centre: CID, p_code: s.code })]).then(function(all){
-    var r = all[0], D = all[1], S = all[2];
+  var m0 = monthStart(new Date(Date.now() + 2 * 3600e3).toISOString().slice(0, 10)), m1 = addMonths(m0, 1);
+  Promise.all([rpc('ctr_owner_home', { p_centre: CID, p_code: s.code }), mgmtLoad(s), rpc('ctr_statements_home', { p_centre: CID, p_code: s.code }),
+               rpc('ctr_billing_home', { p_centre: CID, p_code: s.code, p_period: m0 }), rpc('ctr_billing_home', { p_centre: CID, p_code: s.code, p_period: m1 }),
+               rpc('ctr_faults_home', { p_centre: CID, p_code: s.code })]).then(function(all){
+    var r = all[0], D = all[1], S = all[2], B0 = all[3], B1 = all[4], FH = all[5];
+    var myFaults = FH && FH.ok ? FH.faults.filter(function(f){ return f.unit_id === id && f.status !== 'fixed'; }) : [];
+    // this shop's current invoices: this month's and next month's, draft or sent
+    var cur2 = [B0, B1].filter(function(B){ return B && B.ok; }).map(function(B){
+      return { B: B, inv: (B.invoices || []).filter(function(i){ return i.unit_id === id && i.status !== 'void'; })[0] || null };
+    });
+    var thisM = cur2[0] || null;
     if (!r.ok || !D.ok || !S.ok) { APP.innerHTML = mini('Shop', '#tab/' + LAST_TAB) + '<div class="pad"><div class="msg err">' + esc((r.ok ? (D.ok ? S : D) : r).msg) + '</div></div>'; return; }
     var T = mgmtTotals(D), u = D.units.filter(function(x){ return x.id === id; })[0];
     if (!u) { APP.innerHTML = mini('Shop', '#tab/' + LAST_TAB) + '<div class="pad empty">This unit is not in the centre any more.</div>'; return; }
@@ -2060,7 +2104,12 @@ function pageUnit(id, sec, note){
           '<div class="tile"><div class="k">' + (L.balance < 0 ? 'In credit' : 'Balance') + '</div><div class="v">' + money(cur, Math.abs(L.balance)) + '</div><div class="s">' + (L.age.d30 + L.age.d60 + L.age.d90 > 0 ? money(cur, r2(L.age.d30 + L.age.d60 + L.age.d90)) + ' is 30+ days' : 'nothing overdue') + '</div></div>' +
           '<div class="tile"><div class="k">Rent now</div><div class="v">' + money(cur, c.rent) + '</div><div class="s">a month, excl. VAT</div></div>' +
           '<div class="tile"><div class="k">Lease ends</div><div class="v" style="font-size:16px">' + (l.end_on ? niceY(l.end_on) : 'No end date') + '</div><div class="s">' + (c.toEnd != null ? (c.toEnd < 0 ? 'ended ' + (-c.toEnd) + ' days ago' : 'in ' + c.toEnd + ' days') : '') + '</div></div>' +
-          '<div class="tile"><div class="k">Rentable</div><div class="v">' + m2s(u.area_m2) + '</div><div class="s">' + esc(spacesText(u)) + '</div></div></div>' +
+          '<div class="tile"><div class="k">Rentable</div><div class="v">' + m2s(u.area_m2) + '</div><div class="s">' + esc(spacesText(u)) + '</div></div>' +
+          '<div class="tile" data-go="#unit/' + id + '/invoices" style="cursor:pointer"><div class="k">' + (thisM ? monthName(thisM.B.period) + ' invoice' : 'This month') + '</div>' +
+            (thisM && thisM.inv ? '<div class="v">' + money(cur, +thisM.inv.total) + '</div><div class="s">' + (thisM.inv.status === 'sent' ? 'sent · ' + esc(thisM.inv.number) : 'draft, not sent yet') + '</div>'
+                                : '<div class="v" style="font-size:16px">Not made yet</div><div class="s">made for all shops on Billing</div>') + '</div>' +
+          '<div class="tile' + (myFaults.some(function(f){ return f.urgency === 'urgent'; }) ? ' hot' : '') + '" data-go="#unit/' + id + '/maint" style="cursor:pointer"><div class="k">Maintenance</div><div class="v">' + myFaults.length + ' open</div><div class="s">' +
+            (myFaults.length ? esc(myFaults[0].title) : 'nothing reported') + '</div></div></div>' +
         '<div class="ovgrid"><div><div class="h3">Tenant</div><div class="box"><div class="info">' +
           info('Company', esc(l.tenant_name)) + info('Contact', esc(l.contact || '')) +
           info('Phone', l.phone ? '<a href="tel:' + esc(l.phone.replace(/\s/g, '')) + '">' + esc(l.phone) + '</a>' : '') +
@@ -2081,7 +2130,19 @@ function pageUnit(id, sec, note){
       wireUnitCard(D, box.querySelector('[data-wrap]'), s, T, u, done);
     }
     else if (sec === 'invoices') {
-      add('<div class="hint" style="margin-top:0">Sent invoices for this tenant, newest first. This month\'s drafts are on the Billing tab.</div>' +
+      var curHtml = cur2.map(function(x){
+        var B = x.B, i = x.inv, st = i && i.status === 'draft' ? staleList(D, lh, B).filter(function(n){ return n === u.name; }).length : 0;
+        if (!i) return B.period === m0 ? '<div class="box" style="margin-bottom:10px"><b>' + monthName(B.period) + '</b>: not made yet. Invoices are made for all shops at once.' +
+                   '<div class="btns"><div class="b sm main" data-gobill="' + B.period + '">Go to Billing</div></div></div>' : '';
+        return '<div class="item curinv" data-cur="' + i.id + '"><div style="display:flex;justify-content:space-between;gap:8px"><div><div class="ti">' + monthName(B.period) + (i.number ? ' · ' + esc(i.number) : '') + '</div>' +
+            '<div class="mt">' + (i.status === 'sent' ? 'Sent ' + (i.inv_date ? niceY(i.inv_date) : '') : 'Draft · not sent yet') + '</div></div><div style="text-align:right"><div class="amt">' + money(cur, +i.total) + '</div>' +
+            (i.status === 'sent' ? '<span class="st approved">Sent</span>' : '<span class="st pending">Draft</span>') + (st ? ' <span class="st rejected">Out of date</span>' : '') + '</div></div>' +
+          (st ? '<div class="ask" style="margin-top:8px">The lease, spaces or charges changed after this draft was made.<div class="btns"><div class="b sm main" data-upd="' + B.period + '">Update the drafts</div></div></div>' : '') +
+          '<div class="ivlines">' + i.lines.map(function(l){ return '<div class="crow"><div class="hd"><span style="font-size:13px">' + descHtml(l.description) + '</span><b style="white-space:nowrap">' + money(cur, +l.amount) + '</b></div></div>'; }).join('') +
+          '<div class="crow"><div class="hd"><span>VAT</span><b>' + money(cur, +i.vat) + '</b></div></div><div class="crow"><div class="hd"><b>Total</b><b>' + money(cur, +i.total) + '</b></div></div></div>' +
+          '<div class="btns">' + (i.status === 'draft' ? '<div class="b sm" data-cpdf>Draft PDF</div><div class="b sm" data-gobill="' + B.period + '">Send from Billing ›</div>' : '<div class="b sm" data-cpdf>Download PDF</div>') + '</div><div class="msg" data-cm></div></div>';
+      }).join('');
+      add('<div class="h3" style="margin-top:0">Current</div>' + curHtml + '<div class="h3">All sent invoices</div><div class="hint" style="margin-top:0">Newest first.</div>' +
         (invs.length ? invs.slice().reverse().map(function(i){
           return '<div class="item" data-iv="' + i.id + '"><div style="display:flex;justify-content:space-between;gap:8px"><div><div class="ti">' + esc(i.number) + ' · ' + monthName(i.period) + '</div>' +
             '<div class="mt">' + (i.inv_date ? niceY(i.inv_date) : '') + '</div></div><div style="text-align:right"><div class="amt">' + money(cur, +i.total) + '</div>' +
@@ -2091,6 +2152,16 @@ function pageUnit(id, sec, note){
             '<div class="btns">' + sendBtns('data-ipdf') +
             (i.status === 'sent' ? '<div class="b sm no" data-ivoid>Cancel invoice</div>' : '') + '</div><div class="slot"></div><div class="msg" data-im></div></div>';
         }).join('') : '<div class="box empty">No invoices sent to this tenant yet.</div>'));
+      box.querySelectorAll('[data-gobill]').forEach(function(b){ b.onclick = function(){ BILL_PERIOD = b.getAttribute('data-gobill'); BILL_OPEN = null; go('#tab/billing'); }; });
+      box.querySelectorAll('[data-upd]').forEach(function(b){ b.onclick = function(){
+        var B = cur2.filter(function(x){ return x.B.period === b.getAttribute('data-upd'); })[0].B;
+        b.textContent = 'Updating…';
+        remakeDrafts(D, lh, B, s).then(function(x){ if (x.ok) done('Drafts updated with the latest lease, spaces and charges.'); else b.textContent = x.msg; });
+      }; });
+      box.querySelectorAll('[data-cur]').forEach(function(card){
+        var cid2 = Number(card.getAttribute('data-cur')), inv = cur2.map(function(x){ return x.inv; }).filter(function(i){ return i && i.id === cid2; })[0], cm = card.querySelector('[data-cm]');
+        card.querySelector('[data-cpdf]').onclick = function(){ withPdf(cm, function(){ return pdfOut(buildInvoicePdf(inv, lh), invoiceFileName(inv, lh), 'Invoice', 'save', cm); }); };
+      });
       box.querySelectorAll('[data-iv]').forEach(function(card){
         var inv = invs.filter(function(i){ return i.id === Number(card.getAttribute('data-iv')); })[0], im = card.querySelector('[data-im]');
         card.querySelectorAll('[data-ipdf]').forEach(function(b){ b.onclick = function(){
