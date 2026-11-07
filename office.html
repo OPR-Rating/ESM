@@ -1769,6 +1769,7 @@ function officeLogin(){
   }
   $('open').onclick = open;
   $('code').onkeydown = function(e){ if (e.key === 'Enter') open(); };
+  $('code').focus();   // the cursor starts in the code box, so typing + Enter works straight away
 }
 
 function balPill(L){
