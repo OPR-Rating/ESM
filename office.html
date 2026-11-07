@@ -236,6 +236,11 @@ table.dt{width:100%;border-collapse:separate;border-spacing:0;background:#fff;bo
   body.office .offcard,body.office .offhint{max-width:440px;margin-left:auto;margin-right:auto}
   body.office .offwrap{padding-top:80px}
 }
+/* e8: every small button the same height; labels used as buttons line up; WhatsApp green */
+.btns{align-items:center}
+.b.sm{display:inline-flex;align-items:center;justify-content:center;min-height:36px;line-height:1.1;box-sizing:border-box}
+label.b{margin:0;font-weight:600}
+.b.wa{background:#25d366;border-color:#25d366;color:#fff}
 /* e2: leases and charges */
 .tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .tile{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 12px}
@@ -287,7 +292,7 @@ input[type=date]{-webkit-appearance:none;appearance:none;min-height:44px}
 <script>
 (function(){
 'use strict';
-var ESM_BUILD = 'ESM e7';
+var ESM_BUILD = 'ESM e8';
 var MODE = 'office';   // Block 1 = 'shop' (index.html: shoppers + tenants) · Block 2 = 'office' (office.html). Set by build_esm.py.
 var SB_URL = 'https://pqduivcxwykcixqsfrwi.supabase.co';
 var SB_KEY = 'sb_publishable_Cl8uDRrLqx9VMaC3lifpWA_Wl91vVy2';   // OTR-Tennis public (publishable) key
@@ -1314,7 +1319,7 @@ function ledger(invoices, payments, today){
 }
 
 // ---------- PDFs (jsPDF, built on the phone, like the FeeApp) ----------
-var PDF = { W: 210, M: 16, grey: [107, 114, 128], ink: [17, 24, 39], brand: [20, 50, 92] };
+var PDF = { W: 210, M: 16, grey: [107, 114, 128], ink: [17, 24, 39], brand: [20, 50, 92], gold: [242, 183, 5], panel: [244, 246, 250], line: [226, 230, 238] };
 var pdfReady = null;
 function loadPdf(){
   if (window.jspdf && window.jspdf.jsPDF && window.jspdf.jsPDF.API.autoTable) return Promise.resolve(true);
@@ -1325,113 +1330,215 @@ function loadPdf(){
     .then(function(){ return true; }, function(){ pdfReady = null; return false; });
   return pdfReady;
 }
-function pdfText(s){ return String(s == null ? '' : s).replace(/→/g, 'to').replace(/[‘’]/g, "'").replace(/[“”]/g, '"'); }
-function pdfHeader(doc, lh){
-  var W = PDF.W, M = PDF.M, y = M;
-  doc.setFont('helvetica', 'bold').setFontSize(14).setTextColor.apply(doc, PDF.ink); doc.text(pdfText(lh.legal_name || lh.name), M, y + 5);
-  doc.setFont('helvetica', 'normal').setFontSize(8.5).setTextColor.apply(doc, PDF.grey);
-  var lines = [lh.legal_name ? lh.name : '', lh.address, [lh.phone, lh.email].filter(Boolean).join(' · '),
+function pdfText(s){ return String(s == null ? '' : s).replace(/→/g, 'to').replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/ /g, ' '); }
+function pmoney(cur, n){ return pdfText(money(cur, n)); }
+function fillC(doc, c){ doc.setFillColor(c[0], c[1], c[2]); }
+function textC(doc, c){ doc.setTextColor(c[0], c[1], c[2]); }
+function drawC(doc, c){ doc.setDrawColor(c[0], c[1], c[2]); }
+
+// an invoice line's text: "Main\ndetail" (new) or old one-line text split into main + detail
+function splitDesc(d){
+  d = String(d || '');
+  var nl = d.indexOf('\n');
+  if (nl >= 0) return [d.slice(0, nl), d.slice(nl + 1)];
+  var m = d.match(/^(.*?) \((.*)\)$/); if (m) return [m[1], m[2]];
+  m = d.match(/^(.*?) (meter .*)$/i); if (m) return [m[1], m[2].charAt(0).toUpperCase() + m[2].slice(1)];
+  m = d.match(/^Rent ([a-z ]+?) ([\d.]+ m² × .*?) · (.*)$/); if (m) return ['Rent – ' + m[1], m[2] + ' · ' + m[3]];
+  return [d, ''];
+}
+function lineGroup(main, detail){
+  if (/^Rent/.test(main)) return 'Rent';
+  if (/^Meter /i.test(detail)) return 'Metered utilities';
+  return 'Charges and recoveries';
+}
+function descHtml(d){ var p = splitDesc(d); return esc(p[0]) + (p[1] ? '<div class="est" style="margin-top:2px">' + esc(p[1]) + '</div>' : ''); }
+
+// letterhead: company on the left, the document's name on the right, a brand rule with a gold accent
+function pdfTop(doc, lh, title, sub, subColour){
+  var W = PDF.W, M = PDF.M, y = M + 2;
+  doc.setFont('helvetica', 'bold').setFontSize(15); textC(doc, PDF.ink); doc.text(pdfText(lh.legal_name || lh.name), M, y + 4);
+  doc.setFont('helvetica', 'normal').setFontSize(8.5); textC(doc, PDF.grey);
+  var lines = [lh.legal_name ? lh.name : '', lh.address, [lh.phone, lh.email].filter(Boolean).join('  ·  '),
                lh.vat_registered && lh.vat_no ? 'VAT registration no. ' + lh.vat_no : ''].filter(Boolean);
-  lines.forEach(function(t, i){ doc.text(pdfText(t), M, y + 10 + i * 4); });
-  y += 12 + lines.length * 4;
-  doc.setDrawColor.apply(doc, PDF.brand); doc.setLineWidth(0.8); doc.line(M, y, W - M, y);
-  return y + 8;
+  lines.forEach(function(t, i){ doc.text(pdfText(t), M, y + 10 + i * 4.2); });
+  doc.setFont('helvetica', 'bold').setFontSize(22); textC(doc, PDF.brand); doc.text(title, W - M, y + 6, { align: 'right' });
+  if (sub) { doc.setFontSize(10.5); textC(doc, subColour || PDF.ink); doc.text(pdfText(sub), W - M, y + 13, { align: 'right' }); }
+  y = Math.max(y + 14 + lines.length * 4.2, y + 22);
+  drawC(doc, PDF.brand); doc.setLineWidth(0.6); doc.line(M, y, W - M, y);
+  drawC(doc, PDF.gold); doc.setLineWidth(1.6); doc.line(M, y, M + 28, y);
+  return y + 7;
 }
-function pdfFooter(doc, label){
+// two grey panels side by side: who it is for, and the document's details
+function pdfPanels(doc, y, leftLabel, leftLines, rightRows){
+  var M = PDF.M, CW = PDF.W - 2 * M, w = (CW - 6) / 2, h = Math.max(10 + leftLines.length * 5, 8 + rightRows.length * 5.4) + 2;
+  fillC(doc, PDF.panel); doc.roundedRect(M, y, w, h, 2.5, 2.5, 'F'); doc.roundedRect(M + w + 6, y, w, h, 2.5, 2.5, 'F');
+  doc.setFont('helvetica', 'bold').setFontSize(7.5); textC(doc, PDF.grey); doc.text(leftLabel, M + 5, y + 6);
+  leftLines.forEach(function(t, i){
+    doc.setFont('helvetica', i === 0 ? 'bold' : 'normal').setFontSize(i === 0 ? 11 : 9); textC(doc, i === 0 ? PDF.ink : PDF.grey);
+    doc.text(pdfText(t), M + 5, y + 12 + i * 5);
+  });
+  rightRows.forEach(function(r, i){
+    var yy = y + 7 + i * 5.4;
+    doc.setFont('helvetica', 'normal').setFontSize(8.5); textC(doc, PDF.grey); doc.text(r[0], M + w + 11, yy);
+    doc.setFont('helvetica', 'bold').setFontSize(9.5); textC(doc, PDF.ink); doc.text(pdfText(r[1]), PDF.W - M - 5, yy, { align: 'right' });
+  });
+  return y + h + 7;
+}
+// banking details and terms in two boxes at the bottom
+function pdfFoot(doc, y, lh, reference){
+  var M = PDF.M, CW = PDF.W - 2 * M, w = (CW - 6) / 2, CWb = w - 10;
+  doc.setFont('helvetica', 'normal').setFontSize(9);
+  var bank = doc.splitTextToSize(pdfText(lh.bank || 'Banking details: ask the centre office.'), CWb), terms = doc.splitTextToSize(pdfText(lh.terms || ''), CWb);
+  var h = 16 + Math.max(bank.length * 4.2 + 6, terms.length * 4.2);
+  if (y + h > 278) { doc.addPage(); y = PDF.M; }
+  drawC(doc, PDF.line); doc.setLineWidth(0.3); doc.roundedRect(M, y, w, h, 2.5, 2.5, 'S'); doc.roundedRect(M + w + 6, y, w, h, 2.5, 2.5, 'S');
+  doc.setFont('helvetica', 'bold').setFontSize(7.5); textC(doc, PDF.grey); doc.text('BANKING DETAILS', M + 5, y + 6); doc.text('PAYMENT TERMS', M + w + 11, y + 6);
+  doc.setFont('helvetica', 'normal').setFontSize(9); textC(doc, PDF.ink); doc.text(bank, M + 5, y + 11.5); doc.text(terms, M + w + 11, y + 11.5);
+  if (reference) { doc.setFont('helvetica', 'bold'); textC(doc, PDF.brand); doc.text('Payment reference: ' + pdfText(reference), M + 5, y + 11.5 + bank.length * 4.2 + 2); }
+  return y + h + 6;
+}
+function pdfPageFoot(doc, label){
   var n = doc.getNumberOfPages();
-  for (var i = 1; i <= n; i++) { doc.setPage(i); doc.setFont('helvetica', 'normal').setFontSize(7.5).setTextColor.apply(doc, PDF.grey);
-    doc.text(pdfText(label), PDF.M, 290); doc.text('Page ' + i + ' of ' + n, PDF.W - PDF.M, 290, { align: 'right' }); }
+  for (var i = 1; i <= n; i++) {
+    doc.setPage(i); drawC(doc, PDF.line); doc.setLineWidth(0.3); doc.line(PDF.M, 284, PDF.W - PDF.M, 284);
+    doc.setFont('helvetica', 'normal').setFontSize(7.5); textC(doc, PDF.grey);
+    doc.text(pdfText(label), PDF.M, 289); doc.text('Page ' + i + ' of ' + n, PDF.W - PDF.M, 289, { align: 'right' });
+  }
 }
-function pdfBlock(doc, y, title, text){
-  if (!text) return y;
-  var CW = PDF.W - 2 * PDF.M;
-  if (y > 255) { doc.addPage(); y = PDF.M; }
-  doc.setFont('helvetica', 'bold').setFontSize(8.5).setTextColor.apply(doc, PDF.grey); doc.text(title, PDF.M, y); y += 4.5;
-  var lines = doc.splitTextToSize(pdfText(text), CW);
-  doc.setFont('helvetica', 'normal').setFontSize(9.5).setTextColor.apply(doc, PDF.ink); doc.text(lines, PDF.M, y);
-  return y + lines.length * 4.3 + 6;
-}
-function pdfRight(doc, label, val, yy){
-  doc.setFont('helvetica', 'normal').setFontSize(9).setTextColor.apply(doc, PDF.grey); doc.text(label, PDF.W - PDF.M - 62, yy);
-  doc.setFont('helvetica', 'bold').setTextColor.apply(doc, PDF.ink); doc.text(pdfText(val), PDF.W - PDF.M, yy, { align: 'right' });
-}
-var PDF_TABLE = { theme: 'plain', styles: { font: 'helvetica', fontSize: 9.5, textColor: PDF.ink, cellPadding: { top: 2, bottom: 2, left: 0, right: 1 },
-                  lineColor: [229, 231, 235], lineWidth: { bottom: 0.2 } },
-                  headStyles: { textColor: PDF.grey, fontSize: 8, fontStyle: 'bold', fillColor: false, lineWidth: { bottom: 0.4 }, lineColor: PDF.ink } };
+var PDF_TABLE = { theme: 'plain', styles: { font: 'helvetica', fontSize: 9.5, textColor: PDF.ink, cellPadding: { top: 2.2, bottom: 2.2, left: 2, right: 2 }, lineColor: PDF.line, lineWidth: 0 },
+                  headStyles: { textColor: [255, 255, 255], fillColor: PDF.brand, fontSize: 8, fontStyle: 'bold', cellPadding: { top: 2, bottom: 2, left: 2, right: 2 } } };
 function invoiceFileName(inv, lh){ return ((lh.vat_registered ? 'Tax invoice ' : 'Invoice ') + (inv.number || 'draft') + ' - ' + inv.tenant_name).replace(/[\\/:*?"<>|]+/g, '-') + '.pdf'; }
 
 function buildInvoicePdf(inv, lh){
   var jsPDF = window.jspdf.jsPDF, doc = new jsPDF({ unit: 'mm', format: 'a4' }), M = PDF.M, W = PDF.W, CW = W - 2 * M, cur = lh.currency;
-  var isTax = !!lh.vat_registered, y = pdfHeader(doc, lh);
-  doc.setFont('helvetica', 'bold').setFontSize(16).setTextColor.apply(doc, PDF.ink); doc.text(isTax ? 'TAX INVOICE' : 'INVOICE', M, y + 1);
-  if (inv.status === 'draft') { doc.setTextColor(180, 83, 9); doc.setFontSize(11); doc.text('DRAFT - not sent', M, y + 7); }
-  if (inv.status === 'void') { doc.setTextColor(163, 36, 27); doc.setFontSize(11); doc.text('CANCELLED: ' + pdfText(inv.void_reason || ''), M, y + 7); }
-  pdfRight(doc, 'Invoice number', inv.number || 'draft', y);
-  pdfRight(doc, 'Date', inv.inv_date ? niceY(inv.inv_date) : '-', y + 5);
-  pdfRight(doc, 'Period', monthName(inv.period), y + 10);
-  y += 20;
-  doc.setFont('helvetica', 'bold').setFontSize(8.5).setTextColor.apply(doc, PDF.grey); doc.text('INVOICE TO', M, y); y += 5;
-  doc.setFont('helvetica', 'normal').setFontSize(10.5).setTextColor.apply(doc, PDF.ink); doc.text(pdfText(inv.tenant_name), M, y); y += 5;
-  doc.setFontSize(9).setTextColor.apply(doc, PDF.grey); doc.text(pdfText(inv.unit_name + ' · ' + (lh.name || '')), M, y); y += 4.5;
-  if (inv.tenant_vat_no) { doc.text('VAT no. ' + pdfText(inv.tenant_vat_no), M, y); y += 4.5; }
-  y += 4;
+  var isTax = !!lh.vat_registered;
+  var sub = inv.status === 'draft' ? 'DRAFT - not sent' : inv.status === 'void' ? 'CANCELLED' : 'No. ' + (inv.number || '');
+  var y = pdfTop(doc, lh, isTax ? 'TAX INVOICE' : 'INVOICE', sub, inv.status === 'draft' ? [180, 83, 9] : inv.status === 'void' ? [163, 36, 27] : PDF.ink);
+  y = pdfPanels(doc, y, 'BILL TO', [inv.tenant_name, inv.unit_name + '  ·  ' + (lh.name || ''), inv.tenant_vat_no ? 'VAT no. ' + inv.tenant_vat_no : ''].filter(Boolean),
+    [['Invoice number', inv.number || 'draft'], ['Invoice date', inv.inv_date ? niceY(inv.inv_date) : '-'], ['Period', monthName(inv.period)],
+     ['Due', inv.inv_date ? niceY(inv.inv_date) + ' (in advance)' : 'on receipt']]);
+  // the lines, grouped, with the working-out in small grey text under each
+  var groups = {}, order = [];
+  inv.lines.forEach(function(l){
+    var p = splitDesc(l.description), g = lineGroup(p[0], p[1]);
+    if (!groups[g]) { groups[g] = []; order.push(g); }
+    groups[g].push({ main: p[0], detail: (p[1] ? p[1] : '') + (!(+l.vat_rate) && isTax ? (p[1] ? '  ·  ' : '') + 'no VAT' : ''), amount: +l.amount });
+  });
+  ['Rent', 'Charges and recoveries', 'Metered utilities'].forEach(function(g, i){ var k = order.indexOf(g); if (k >= 0) { order.splice(k, 1); order.splice(i > order.length ? order.length : i, 0, g); } });
+  var body = [];
+  order.forEach(function(g){
+    body.push([{ content: g.toUpperCase(), colSpan: 2, styles: { fontStyle: 'bold', fontSize: 7.5, textColor: PDF.grey, cellPadding: { top: 2.6, bottom: 0.6, left: 2, right: 2 } } }]);
+    groups[g].forEach(function(r){
+      body.push([{ content: pdfText(r.main), styles: { fontStyle: 'bold', fontSize: 9.2, cellPadding: { top: 1.5, bottom: r.detail ? 0.1 : 1.5, left: 2, right: 2 } } },
+                 { content: pmoney(cur, r.amount), styles: { halign: 'right', fontSize: 9.2, cellPadding: { top: 1.5, bottom: r.detail ? 0.1 : 1.5, left: 2, right: 2 } } }]);
+      if (r.detail) body.push([{ content: pdfText(r.detail), colSpan: 2, styles: { fontSize: 7.6, textColor: PDF.grey, cellPadding: { top: 0, bottom: 1.5, left: 2, right: 2 } } }]);
+    });
+  });
   doc.autoTable(Object.assign({}, PDF_TABLE, { startY: y, margin: { left: M, right: M },
-    head: [['Description', 'Amount excl. VAT', 'VAT', 'Amount']],
-    body: inv.lines.map(function(l){ return [pdfText(l.description), money(cur, +l.amount), +l.vat_rate ? money(cur, +l.vat) : '-', money(cur, +l.amount + +l.vat)]; }),
-    columnStyles: { 0: { cellWidth: 'auto' }, 1: { halign: 'right', cellWidth: 32 }, 2: { halign: 'right', cellWidth: 24 }, 3: { halign: 'right', cellWidth: 32 } },
-    didParseCell: function(d){ if (d.section === 'head' && d.column.index > 0) d.cell.styles.halign = 'right'; } }));
-  y = doc.lastAutoTable.finalY + 2;
-  var tot = isTax ? [['Subtotal (excl. VAT)', money(cur, +inv.subtotal)], ['VAT at 15%', money(cur, +inv.vat)], ['TOTAL DUE', money(cur, +inv.total)]]
-                  : [['TOTAL DUE', money(cur, +inv.total)]];
-  doc.autoTable(Object.assign({}, PDF_TABLE, { startY: y, margin: { left: M + CW * 0.45, right: M }, body: tot,
-    columnStyles: { 0: { cellWidth: 'auto' }, 1: { halign: 'right', cellWidth: 42 } },
-    didParseCell: function(d){ if (d.row.index === tot.length - 1) { d.cell.styles.fontStyle = 'bold'; d.cell.styles.fontSize = 11.5; d.cell.styles.lineWidth = { top: 0.5, bottom: 0 }; d.cell.styles.lineColor = PDF.ink; } } }));
-  y = doc.lastAutoTable.finalY + 10;
-  y = pdfBlock(doc, y, 'PAYMENT TERMS', lh.terms);
-  y = pdfBlock(doc, y, 'BANKING DETAILS', lh.bank ? lh.bank + (inv.number ? '\nPayment reference: ' + inv.number : '') : '');
-  pdfFooter(doc, (lh.legal_name || lh.name) + ' · ' + (isTax ? 'Tax invoice ' : 'Invoice ') + (inv.number || 'draft'));
+    head: [[{ content: 'DESCRIPTION' }, { content: isTax ? 'AMOUNT EXCL. VAT' : 'AMOUNT', styles: { halign: 'right' } }]], body: body,
+    columnStyles: { 0: { cellWidth: 'auto' }, 1: { halign: 'right', cellWidth: 44 } },
+    willDrawCell: function(d){ if (d.section === 'body' && d.row.raw && d.row.raw.length === 2 && d.column.index === 0 && !d.row.raw[0].colSpan) {} },
+    didDrawCell: function(d){
+      // a soft rule under each item (after its grey detail line, if any)
+      if (d.section !== 'body') return;
+      var raw = d.row.raw, next = d.table.body[d.row.index + 1];
+      var isGroup = raw.length === 1 && raw[0].content === raw[0].content.toUpperCase() && raw[0].styles && raw[0].styles.fontSize === 7.5;
+      var nextIsDetail = next && next.raw.length === 1 && next.raw[0].styles && next.raw[0].styles.fontSize === 7.6;
+      if (isGroup || nextIsDetail) return;
+      drawC(doc, PDF.line); doc.setLineWidth(0.2); doc.line(d.cell.x, d.cell.y + d.cell.height, d.cell.x + d.cell.width, d.cell.y + d.cell.height);
+    } }));
+  y = doc.lastAutoTable.finalY + 5;
+  // totals on the right, the amount due in a brand bar
+  var tx = M + CW - 86, tw = 86;
+  if (y + (isTax ? 27 : 13) > 282) { doc.addPage(); y = M; }
+  doc.setFont('helvetica', 'normal').setFontSize(9.5); textC(doc, PDF.grey);
+  if (isTax) {
+    doc.text('Subtotal (excl. VAT)', tx + 3, y + 4); textC(doc, PDF.ink); doc.text(pmoney(cur, +inv.subtotal), tx + tw - 3, y + 4, { align: 'right' });
+    textC(doc, PDF.grey); doc.text('VAT at 15%', tx + 3, y + 10); textC(doc, PDF.ink); doc.text(pmoney(cur, +inv.vat), tx + tw - 3, y + 10, { align: 'right' });
+    y += 14;
+  }
+  fillC(doc, PDF.brand); doc.roundedRect(tx, y, tw, 12, 2, 2, 'F');
+  doc.setFont('helvetica', 'bold').setFontSize(9); doc.setTextColor(255, 255, 255); doc.text('TOTAL DUE', tx + 4, y + 7.6);
+  doc.setFontSize(13); doc.text(pmoney(cur, +inv.total), tx + tw - 4, y + 8, { align: 'right' });
+  y += 20;
+  if (inv.status === 'void' && inv.void_reason) { doc.setFont('helvetica', 'bold').setFontSize(9.5); doc.setTextColor(163, 36, 27); doc.text('Cancelled: ' + pdfText(inv.void_reason), M, y); y += 8; }
+  pdfFoot(doc, y, lh, inv.number || null);
+  pdfPageFoot(doc, (lh.legal_name || lh.name) + (lh.vat_registered && lh.vat_no ? '  ·  VAT ' + lh.vat_no : '') + '  ·  ' + (isTax ? 'Tax invoice ' : 'Invoice ') + (inv.number || 'draft'));
   return doc;
 }
 
 function buildStatementPdf(lease, L, lh, today){
-  var jsPDF = window.jspdf.jsPDF, doc = new jsPDF({ unit: 'mm', format: 'a4' }), M = PDF.M, W = PDF.W, cur = lh.currency, y = pdfHeader(doc, lh);
-  doc.setFont('helvetica', 'bold').setFontSize(16).setTextColor.apply(doc, PDF.ink); doc.text('STATEMENT', M, y + 1);
-  pdfRight(doc, 'Date', niceY(today), y);
-  pdfRight(doc, 'Amount due', money(cur, Math.max(0, L.balance)), y + 5);
-  y += 14;
-  doc.setFont('helvetica', 'bold').setFontSize(8.5).setTextColor.apply(doc, PDF.grey); doc.text('STATEMENT FOR', M, y); y += 5;
-  doc.setFont('helvetica', 'normal').setFontSize(10.5).setTextColor.apply(doc, PDF.ink); doc.text(pdfText(lease.tenant_name), M, y); y += 5;
-  doc.setFontSize(9).setTextColor.apply(doc, PDF.grey); doc.text(pdfText(lease.unit + ' · ' + (lh.name || '')), M, y); y += 8;
+  var jsPDF = window.jspdf.jsPDF, doc = new jsPDF({ unit: 'mm', format: 'a4' }), M = PDF.M, W = PDF.W, CW = W - 2 * M, cur = lh.currency;
+  var y = pdfTop(doc, lh, 'STATEMENT', 'As at ' + niceY(today));
+  y = pdfPanels(doc, y, 'STATEMENT FOR', [lease.tenant_name, lease.unit + '  ·  ' + (lh.name || '')],
+    [['Statement date', niceY(today)], ['Account', lease.unit], [L.balance < 0 ? 'In credit' : 'Amount due', pmoney(cur, Math.abs(L.balance))]]);
   doc.autoTable(Object.assign({}, PDF_TABLE, { startY: y, margin: { left: M, right: M },
-    head: [['Date', 'Reference', 'Description', 'Debit', 'Credit', 'Balance']],
-    body: L.rows.map(function(r){ return [niceY(r.date), pdfText(r.ref), pdfText(r.desc), r.debit ? money(cur, r.debit) : '', r.credit ? money(cur, r.credit) : '', money(cur, r.balance)]; }),
-    columnStyles: { 0: { cellWidth: 24 }, 1: { cellWidth: 24 }, 2: { cellWidth: 'auto' }, 3: { halign: 'right', cellWidth: 26 }, 4: { halign: 'right', cellWidth: 26 }, 5: { halign: 'right', cellWidth: 28 } },
-    didParseCell: function(d){ if (d.section === 'head' && d.column.index > 2) d.cell.styles.halign = 'right'; } }));
-  y = doc.lastAutoTable.finalY + 6;
-  doc.autoTable(Object.assign({}, PDF_TABLE, { startY: y, margin: { left: M, right: M },
-    head: [['Current', '30 days', '60 days', '90 days and over', 'Amount due']],
-    body: [[money(cur, L.age.cur), money(cur, L.age.d30), money(cur, L.age.d60), money(cur, L.age.d90), money(cur, Math.max(0, L.balance))]],
-    styles: Object.assign({}, PDF_TABLE.styles, { halign: 'right' }),
-    didParseCell: function(d){ d.cell.styles.halign = 'right'; if (d.section === 'body' && d.column.index === 4) d.cell.styles.fontStyle = 'bold'; } }));
-  y = doc.lastAutoTable.finalY + 10;
-  if (L.balance < 0) y = pdfBlock(doc, y, 'IN CREDIT', 'Your account is in credit by ' + money(cur, -L.balance) + '.');
-  y = pdfBlock(doc, y, 'PAYMENT TERMS', lh.terms);
-  y = pdfBlock(doc, y, 'BANKING DETAILS', lh.bank ? lh.bank + '\nPayment reference: ' + lease.unit : '');
-  pdfFooter(doc, (lh.legal_name || lh.name) + ' · Statement ' + lease.tenant_name + ' · ' + niceY(today));
+    head: [['DATE', 'REFERENCE', 'DESCRIPTION', { content: 'DEBIT', styles: { halign: 'right' } }, { content: 'CREDIT', styles: { halign: 'right' } }, { content: 'BALANCE', styles: { halign: 'right' } }]],
+    body: L.rows.length ? L.rows.map(function(r){ return [niceY(r.date), pdfText(r.ref), pdfText(r.desc), r.debit ? pmoney(cur, r.debit) : '', r.credit ? pmoney(cur, r.credit) : '', pmoney(cur, r.balance)]; })
+                        : [[{ content: 'No invoices or payments yet.', colSpan: 6, styles: { textColor: PDF.grey } }]],
+    alternateRowStyles: { fillColor: [249, 250, 252] },
+    columnStyles: { 0: { cellWidth: 24 }, 1: { cellWidth: 24 }, 2: { cellWidth: 'auto' }, 3: { halign: 'right', cellWidth: 26 }, 4: { halign: 'right', cellWidth: 26 }, 5: { halign: 'right', cellWidth: 28, fontStyle: 'bold' } } }));
+  y = doc.lastAutoTable.finalY + 8;
+  if (y > 230) { doc.addPage(); y = M; }
+  // what is owed, by age: five boxes, the last one is the amount due
+  var boxes = [['Current', L.age.cur], ['30 days', L.age.d30], ['60 days', L.age.d60], ['90+ days', L.age.d90], [L.balance < 0 ? 'In credit' : 'Amount due', Math.abs(L.balance)]];
+  var bw = (CW - 4 * 3) / 5;
+  boxes.forEach(function(b, i){
+    var x = M + i * (bw + 3), last = i === 4;
+    if (last) fillC(doc, PDF.brand); else fillC(doc, PDF.panel);
+    doc.roundedRect(x, y, bw, 16, 2, 2, 'F');
+    doc.setFont('helvetica', 'bold').setFontSize(7.5); if (last) doc.setTextColor(203, 213, 225); else textC(doc, PDF.grey); doc.text(b[0].toUpperCase(), x + bw / 2, y + 6, { align: 'center' });
+    doc.setFontSize(last ? 11 : 10); if (last) doc.setTextColor(255, 255, 255); else textC(doc, b[1] > 0 && i > 0 ? [163, 36, 27] : PDF.ink);
+    doc.text(pmoney(cur, b[1]), x + bw / 2, y + 12.5, { align: 'center' });
+  });
+  y += 24;
+  pdfFoot(doc, y, lh, lease.unit);
+  pdfPageFoot(doc, (lh.legal_name || lh.name) + '  ·  Statement  ·  ' + lease.tenant_name + '  ·  ' + niceY(today));
   return doc;
 }
 
-// share on the phone (WhatsApp, email…) or download, like the FeeApp
-function pdfOut(doc, name, title, how, msgEl){
+// send: WhatsApp / Email / Download. On a phone WhatsApp and Email open the share sheet with the PDF attached;
+// on a laptop the PDF is downloaded and WhatsApp (or the email program) opens with the message ready, to attach it.
+function waNumber(phone, cur){
+  var d = String(phone || '').replace(/\D/g, '');
+  if (!d) return '';
+  if (d.charAt(0) === '0') d = (cur === 'R' ? '27' : '268') + d.slice(1);
+  return d.length >= 9 ? d : '';
+}
+function pdfOut(doc, name, title, how, msgEl, contact){
   function say(t, err){ if (msgEl) { msgEl.className = 'msg ' + (err ? 'err' : 'ok'); msgEl.textContent = t; } }
+  contact = contact || {};
   var file = null;
   try { file = new File([doc.output('blob')], name, { type: 'application/pdf' }); } catch (e) {}
-  if (how === 'share' && file && navigator.canShare && navigator.canShare({ files: [file] })) {
-    return navigator.share({ files: [file], title: title, text: title }).then(function(){ say('Sent.'); }, function(e){ if (!e || e.name !== 'AbortError') { doc.save(name); say('PDF downloaded. Attach it to your email or message.'); } });
+  var phoneLike = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  if ((how === 'share' || ((how === 'wa' || how === 'mail') && phoneLike)) && file && navigator.canShare && navigator.canShare({ files: [file] })) {
+    return navigator.share({ files: [file], title: title, text: contact.text || title }).then(function(){ say('Sent.'); },
+      function(e){ if (!e || e.name !== 'AbortError') { doc.save(name); say('PDF downloaded. Attach it to your message.'); } });
   }
-  doc.save(name); say(how === 'share' ? 'PDF downloaded. Attach it to your email or message.' : 'PDF downloaded.');
+  doc.save(name);
+  if (how === 'wa') {
+    window.open('https://wa.me/' + waNumber(contact.phone, contact.cur) + '?text=' + encodeURIComponent(contact.text || title), '_blank');
+    say('PDF downloaded. WhatsApp is opening with the message: attach the PDF (drag it into the chat).');
+  } else if (how === 'mail') {
+    location.href = 'mailto:' + encodeURIComponent(contact.email || '') + '?subject=' + encodeURIComponent(title) + '&body=' + encodeURIComponent(contact.text || '');
+    say('PDF downloaded. Your email is opening: attach the PDF before sending.');
+  } else {
+    say(how === 'share' ? 'PDF downloaded. Attach it to your email or message.' : 'PDF downloaded.');
+  }
   return Promise.resolve();
 }
+function sendBtns(attr, main){
+  return '<div class="b sm wa" ' + attr + '="wa">WhatsApp</div><div class="b sm" ' + attr + '="mail">Email</div><div class="b sm" ' + attr + '="save">Download</div>';
+}
+function invMsg(inv, lh, who){
+  return 'Good day' + (who ? ' ' + who : '') + ',\n\nPlease find ' + (lh.vat_registered ? 'tax invoice ' : 'invoice ') + (inv.number || '') + ' for ' + monthName(inv.period) +
+    ' from ' + (lh.legal_name || lh.name) + ': ' + pdfText(money(lh.currency, +inv.total)) + ' (incl. VAT).\nPayment reference: ' + (inv.number || inv.unit_name) + '.\n\nThank you.';
+}
+function stMsg(lease, L, lh, today, who){
+  return 'Good day' + (who ? ' ' + who : '') + ',\n\nPlease find your statement from ' + (lh.legal_name || lh.name) + ' as at ' + niceY(today) + '. ' +
+    (L.balance > 0 ? 'Amount due: ' + pdfText(money(lh.currency, L.balance)) + '.' : 'Your account is up to date.') + '\nPayment reference: ' + lease.unit + '.\n\nThank you.';
+}
+
 function withPdf(msgEl, fn){
   if (msgEl) { msgEl.className = 'msg'; msgEl.textContent = 'Preparing the PDF…'; }
   return loadPdf().then(function(ok){
@@ -1456,31 +1563,32 @@ function computeRun(D, lh, period, inp){
     if (l.rent_basis === 'spaces' && (u.spaces || []).length) {   // one rent line per space (rate after the yearly increases)
       u.spaces.forEach(function(sp){
         var rt = r2(spaceRate(sp) * lc.esc);
-        lines.push({ description: 'Rent ' + (sp.type ? sp.type.name.toLowerCase() : 'space') + ' ' + (+sp.area_m2) + ' m² × ' + money(cur, rt) + ' · ' + monthName(p0) + part,
+        lines.push({ description: 'Rent – ' + (sp.type ? sp.type.name.toLowerCase() : 'space') + '\n' + (+sp.area_m2) + ' m² × ' + money(cur, rt) + ' per m² · ' + monthName(p0) + part,
                      amount: r2(+sp.area_m2 * rt * f), vat_rate: vatOn ? 15 : 0 });
       });
     } else {
-      lines.push({ description: 'Rent ' + monthName(p0) + part, amount: r2(lc.rent * f), vat_rate: vatOn ? 15 : 0 });
+      lines.push({ description: 'Rent\n' + monthName(p0) + part, amount: r2(lc.rent * f), vat_rate: vatOn ? 15 : 0 });
     }
     D.charges.forEach(function(ct){
       var row = chargeRow(D, u, ct); if (!row.enabled) return;
       var m = row.method || ct.method, vr = vatOn && ct.vat ? 15 : 0;
       if (m === 'metered' && !row.has_meter) m = 'share';
       if (m === 'off') return;
-      if (m === 'fixed') { var a = (row.amount != null ? +row.amount : +ct.rate) * f; if (a) lines.push({ description: ct.name + part, amount: r2(a), vat_rate: vr }); return; }
+      if (m === 'fixed') { var a = (row.amount != null ? +row.amount : +ct.rate) * f; if (a) lines.push({ description: ct.name + (part ? '\n' + part.trim() : ''), amount: r2(a), vat_rate: vr }); return; }
       if (m === 'per_m2') { if (!area) { warn.push(u.name + ': ' + ct.name + ' needs the m².'); return; }
-        if (+ct.rate) lines.push({ description: ct.name + ' (' + area + ' m² × ' + money(cur, +ct.rate) + ')' + part, amount: r2(area * ct.rate * f), vat_rate: vr }); return; }
+        if (+ct.rate) lines.push({ description: ct.name + '\n' + area + ' m² × ' + money(cur, +ct.rate) + ' per m²' + part, amount: r2(area * ct.rate * f), vat_rate: vr }); return; }
       if (m === 'share') {
         if (!(ct.id in bills)) { if (!warned[ct.id]) { warn.push('No centre bill entered for ' + ct.name + ', so it is left off.'); warned[ct.id] = 1; } return; }
         if (!area || !T.basis) { warn.push(u.name + ': ' + ct.name + ' needs the m².'); return; }
         var pc = area / T.basis;
-        lines.push({ description: ct.name + ' (' + (Math.round(pc * 10000) / 100) + '% of ' + money(cur, bills[ct.id]) + ')', amount: r2(bills[ct.id] * pc), vat_rate: vr }); return; }
+        lines.push({ description: ct.name + '\n' + (Math.round(pc * 10000) / 100) + '% of the centre\'s ' + money(cur, bills[ct.id]) + ' (your share by m²)', amount: r2(bills[ct.id] * pc), vat_rate: vr }); return; }
       if (m === 'metered') {
         var rd = reads[u.id + '_' + ct.id];
         if (!rd || rd.curr == null || rd.curr === '' || rd.prev == null || rd.prev === '') { warn.push(u.name + ': no ' + ct.name.toLowerCase() + ' reading, so it is left off.'); return; }
         var used = +rd.curr - +rd.prev;
         if (used < 0) { warn.push(u.name + ': the ' + ct.name.toLowerCase() + ' reading is lower than last month; left off.'); return; }
-        lines.push({ description: ct.name + ' meter ' + (row.meter_no || '') + ': ' + rd.prev + ' to ' + rd.curr + ' = ' + r2(used) + ' × ' + money(cur, +ct.rate) + (+ct.basic ? ' + basic ' + money(cur, +ct.basic) : ''),
+        if (+rd.prev === 0) warn.push(u.name + ': the last ' + ct.name.toLowerCase() + ' reading is 0. If this is the meter\'s first month, type its reading on the day the lease started as the last reading.');
+        lines.push({ description: ct.name + '\nMeter ' + (row.meter_no || '') + ': ' + rd.prev + ' to ' + rd.curr + ' = ' + r2(used) + ' units × ' + money(cur, +ct.rate) + (+ct.basic ? ' + basic ' + money(cur, +ct.basic) : ''),
                      amount: r2(used * ct.rate + +ct.basic), vat_rate: vr });
       }
     });
@@ -1564,10 +1672,10 @@ function drawBilling(box, s, top, D, B){
           '<div class="mt">' + esc(i.tenant_name) + (i.number ? ' · ' + esc(i.number) : '') + '</div></div><div style="text-align:right"><div class="amt">' + money(cur, +i.total) + '</div>' +
           (i.status === 'void' ? '<span class="st rejected">Cancelled</span>' : i.status === 'sent' ? '<span class="st approved">Sent</span>' : '<span class="st pending">Draft</span>') + '</div></div>' +
           (BILL_OPEN === i.id ? '<div class="box" style="margin-top:10px;cursor:default" data-icard>' + i.lines.map(function(l){
-              return '<div class="crow"><div class="hd"><span style="font-size:13px">' + esc(l.description) + '</span><b style="white-space:nowrap">' + money(cur, +l.amount) + '</b></div>' +
+              return '<div class="crow"><div class="hd"><span style="font-size:13px">' + descHtml(l.description) + '</span><b style="white-space:nowrap">' + money(cur, +l.amount) + '</b></div>' +
                 (+l.vat_rate ? '<div class="est">+ VAT ' + money(cur, +l.vat) + '</div>' : '<div class="est">no VAT</div>') + '</div>'; }).join('') +
             '<div class="crow"><div class="hd"><b>Total incl. VAT</b><b>' + money(cur, +i.total) + '</b></div></div>' +
-            '<div class="btns"><div class="b sm main" data-ipdf="share">' + (i.status === 'draft' ? 'Draft PDF' : 'Send PDF') + '</div><div class="b sm" data-ipdf="save">Download</div>' +
+            '<div class="btns">' + (i.status === 'draft' ? '<div class="b sm" data-ipdf="save">Draft PDF</div>' : sendBtns('data-ipdf')) +
             (i.status === 'sent' ? '<div class="b sm no" data-ivoid>Cancel invoice</div>' : '') + '<div class="b sm" data-go="#unit/' + i.unit_id + '/overview">Open the shop page ›</div></div><div class="slot"></div><div class="msg" data-im></div></div>' : '') +
         '</div>';
       }).join('');
@@ -1642,7 +1750,9 @@ function drawBilling(box, s, top, D, B){
   if (card) {
     var inv = invs.filter(function(i){ return i.id === BILL_OPEN; })[0], im = card.querySelector('[data-im]');
     card.querySelectorAll('[data-ipdf]').forEach(function(b){ b.onclick = function(){
-      withPdf(im, function(){ return pdfOut(buildInvoicePdf(inv, lh), invoiceFileName(inv, lh), (lh.vat_registered ? 'Tax invoice ' : 'Invoice ') + (inv.number || 'draft'), b.getAttribute('data-ipdf'), im); });
+      var le = D.leases.filter(function(x){ return x.id === inv.lease_id; })[0] || {};
+      withPdf(im, function(){ return pdfOut(buildInvoicePdf(inv, lh), invoiceFileName(inv, lh), (lh.vat_registered ? 'Tax invoice ' : 'Invoice ') + (inv.number || 'draft'), b.getAttribute('data-ipdf'), im,
+        { phone: le.phone, email: le.email, cur: lh.currency, text: invMsg(inv, lh, le.contact) }); });
     }; });
     var vd = card.querySelector('[data-ivoid]');
     if (vd) vd.onclick = function(){
@@ -1717,7 +1827,8 @@ function wireStCard(card, S, x, s, done){
   var lh = S.letterhead, cur = lh.currency, today = S.today, sm = card.querySelector('[data-sm]');
   card.querySelectorAll('[data-spdf]').forEach(function(b){ b.onclick = function(){
     withPdf(sm, function(){ return pdfOut(buildStatementPdf(x.l, x.L, lh, today), ('Statement ' + x.l.tenant_name + ' ' + today).replace(/[\\/:*?"<>|]+/g, '-') + '.pdf',
-                                          'Statement ' + x.l.tenant_name, b.getAttribute('data-spdf'), sm); });
+                                          'Statement ' + x.l.tenant_name, b.getAttribute('data-spdf'), sm,
+                                          { phone: x.l.phone, email: x.l.email, cur: cur, text: stMsg(x.l, x.L, lh, today, x.l.contact) }); });
   }; });
   card.querySelectorAll('[data-rinv]').forEach(function(b){ b.onclick = function(){
     var inv = S.invoices.filter(function(i){ return i.id === Number(b.getAttribute('data-rinv')); })[0];
@@ -1749,7 +1860,7 @@ function stCard(l, L, cur, today){
         (r.kind === 'pay' ? ' · <span data-pdel="' + r.pay.id + '" style="color:var(--bad);font-weight:600;cursor:pointer">remove</span>' : '') + '</div></div>';
     }).join('') : '<div class="empty">No invoices or payments yet.</div>') +
     '<div class="slot"></div>' +
-    '<div class="btns"><div class="b sm main" data-spdf="share">Send statement PDF</div><div class="b sm" data-spdf="save">Download</div></div>' +
+    '<div class="sub">Send the statement</div><div class="btns">' + sendBtns('data-spdf') + '</div>' +
     '<div class="sub">Record a payment</div>' +
     '<div class="two"><div><label>Received on</label><input type="date" data-pd value="' + today + '"></div><div><label>Amount (' + cur + ')</label><input data-pa inputmode="decimal"></div></div>' +
     '<label>Reference</label><input data-pr maxlength="60" placeholder="e.g. EFT ' + esc(l.unit) + '">' +
@@ -1941,15 +2052,16 @@ function pageUnit(id, sec, note){
           return '<div class="item" data-iv="' + i.id + '"><div style="display:flex;justify-content:space-between;gap:8px"><div><div class="ti">' + esc(i.number) + ' · ' + monthName(i.period) + '</div>' +
             '<div class="mt">' + (i.inv_date ? niceY(i.inv_date) : '') + '</div></div><div style="text-align:right"><div class="amt">' + money(cur, +i.total) + '</div>' +
             (i.status === 'void' ? '<span class="st rejected">Cancelled</span>' : '<span class="st approved">Sent</span>') + '</div></div>' +
-            '<div class="ivlines">' + i.lines.map(function(x){ return '<div class="crow"><div class="hd"><span style="font-size:13px">' + esc(x.description) + '</span><b style="white-space:nowrap">' + money(cur, +x.amount) + '</b></div></div>'; }).join('') +
+            '<div class="ivlines">' + i.lines.map(function(x){ return '<div class="crow"><div class="hd"><span style="font-size:13px">' + descHtml(x.description) + '</span><b style="white-space:nowrap">' + money(cur, +x.amount) + '</b></div></div>'; }).join('') +
             '<div class="crow"><div class="hd"><span>VAT</span><b>' + money(cur, +i.vat) + '</b></div></div></div>' +
-            '<div class="btns"><div class="b sm main" data-ipdf="share">Send PDF</div><div class="b sm" data-ipdf="save">Download</div>' +
+            '<div class="btns">' + sendBtns('data-ipdf') +
             (i.status === 'sent' ? '<div class="b sm no" data-ivoid>Cancel invoice</div>' : '') + '</div><div class="slot"></div><div class="msg" data-im></div></div>';
         }).join('') : '<div class="box empty">No invoices sent to this tenant yet.</div>'));
       box.querySelectorAll('[data-iv]').forEach(function(card){
         var inv = invs.filter(function(i){ return i.id === Number(card.getAttribute('data-iv')); })[0], im = card.querySelector('[data-im]');
         card.querySelectorAll('[data-ipdf]').forEach(function(b){ b.onclick = function(){
-          withPdf(im, function(){ return pdfOut(buildInvoicePdf(inv, lh), invoiceFileName(inv, lh), 'Tax invoice ' + inv.number, b.getAttribute('data-ipdf'), im); });
+          withPdf(im, function(){ return pdfOut(buildInvoicePdf(inv, lh), invoiceFileName(inv, lh), (lh.vat_registered ? 'Tax invoice ' : 'Invoice ') + inv.number, b.getAttribute('data-ipdf'), im,
+            { phone: l.phone, email: l.email, cur: lh.currency, text: invMsg(inv, lh, l.contact) }); });
         }; });
         var vd = card.querySelector('[data-ivoid]');
         if (vd) vd.onclick = function(){
